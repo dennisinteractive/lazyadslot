@@ -1,0 +1,96 @@
+<?php
+/**
+ * @file
+ * Main module file.
+ */
+
+/**
+ * Implements hook_context_registry().
+ */
+function lazyadslot_context_registry() {
+  return [
+    'reactions' => [
+      'lazyadslot' => [
+        'title' => t('Lazy Loading Ad Slots'),
+        'plugin' => 'lazyadslot_context_reaction',
+      ],
+    ],
+  ];
+}
+
+/**
+ * Implements hook_context_plugins().
+ */
+function lazyadslot_context_plugins() {
+  $plugins['lazyadslot_context_reaction'] = [
+    'handler' => [
+      'path' => drupal_get_path('module', 'lazyadslot') . '/plugins',
+      'file' => 'lazyadslot_context_reaction.inc',
+      'class' => 'LazyLoadAdSlotContextReaction',
+      'parent' => 'context_condition',
+    ],
+  ];
+  return $plugins;
+}
+
+/**
+ * Implements hook_page_build().
+ *
+ * Get all needed settings and add it to the JavaScript which will append
+ * the rendered dfp tag in specified location.
+ * All the visibility rules should be controlled by the context.
+ */
+function lazyadslot_page_build(&$page) {
+
+  $lazyadslot_tags = [];
+
+  // Execute lazyadslot plugin.
+  if ($plugin = context_get_plugin('reaction', 'lazyadslot')) {
+    $plugin->execute();
+
+    // Missing configuration.
+    if (empty($plugin->lazyadslot_tags)) {
+      return;
+    }
+
+    foreach ($plugin->lazyadslot_tags as $key => $values) {
+      // Load the DFP tag.
+      $tag = dfp_tag_load($values['ad_tag']);
+
+      // Disabled tag.
+      if (!empty($tag->disabled)) {
+        continue;
+      }
+
+      $dfp_tag = dfp_tag($values['ad_tag']);
+
+//      dsm($values, '$values');
+//      dsm($dfp_tag, '$values');
+
+      $lazyadslot_tags[$key] = $values;
+      $lazyadslot_tags[$key]['targeting'] = $tag->targeting;
+      // Render the tag.
+      $lazyadslot_tags[$key]['renderedDfp'] = render($dfp_tag);
+    }
+    // Add the javascript.
+    _lazyadslot_add_js($lazyadslot_tags);
+  }
+}
+
+/**
+ * Helper to add the javascript code for Taboola DFP Native.
+ */
+function _lazyadslot_add_js($tags) {
+  if (empty($tags)) {
+    return;
+  }
+
+  // Add collected JS configuration.
+  drupal_add_js([
+    'lazyAdSlot' => [
+      'tags' => $tags,
+    ],
+  ], 'setting');
+
+  drupal_add_js(drupal_get_path('module', 'lazyadslot') . '/js/lazyadslot.js');
+}
