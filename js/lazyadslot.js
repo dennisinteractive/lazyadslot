@@ -28,22 +28,31 @@
       $(html).insertAfter(el);
     },
     detectOnScroll: function () {
+      var tag = this.getTag();
+      for (var i = 0, len = tag.ad_placement.length; i < len; i++) {
 
-      var tag = this.getTag(),
-        windowTop = $(window).scrollTop(),
-        $el = $(tag.ad_placement),
-        offset = $el.offset(),
-        elTopOffset = offset.top,
-        windowHeight = $(window).height(),
-      // Used for comparison on initial page load.
-        loadHeightInitial = windowTop + elTopOffset + $el.height() - parseInt(tag.top),
-      // Used for comparison on page scroll.
-        loadHeightScroll = elTopOffset + $el.height() - parseInt(tag.top);
+        var tag = this.getTag();
+        var $el = $(tag.ad_placement[i]);
 
-      if (!tag.added && ((windowHeight > loadHeightInitial) || (windowTop + windowHeight) >= loadHeightScroll)) {
-        tag.added = true;
-        this.setTag(tag);
-        this.appendAfter($el, tag.renderedDfp);
+        if (!$el.length) {
+          continue;
+        }
+
+        var offset = $el.offset(),
+          windowTop = $(window).scrollTop(),
+          elTopOffset = offset.top,
+          windowHeight = $(window).height(),
+        // Used for comparison on initial page load.
+          loadHeightInitial = windowTop + elTopOffset + $el.height() - parseInt(tag.top),
+        // Used for comparison on page scroll.
+          loadHeightScroll = elTopOffset + $el.height() - parseInt(tag.top);
+
+        if (!tag.added['selector_' + i] && ((windowHeight > loadHeightInitial) || (windowTop + windowHeight) >= loadHeightScroll)) {
+          //console.debug('SPOTTED');
+          tag.added['selector_' + i] = true;
+          this.setTag(tag);
+          this.appendAfter($el, tag.renderedDfp);
+        }
       }
     },
 
@@ -53,7 +62,7 @@
       switch (this.detectPlacement(tag)) {
         case 'onScroll':
           // Indicator to load the Ad only once.
-          tag.added = false;
+          tag.added = [];
           this.setTag(tag);
           var lazyLoadObj = this;
 
@@ -76,6 +85,9 @@
 
   // Starting point.
   return function (AdSlotTag) {
+    //console.debug(AdSlotTag);
+    //return;
+
     return !!(window.googletag && AdSlotTag &&
     $(AdSlotTag.ad_placement).length &&
     lazyLoadAdSlotold.execute(AdSlotTag));

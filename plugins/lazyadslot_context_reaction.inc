@@ -45,11 +45,24 @@ class LazyLoadAdSlotContextReaction extends context_reaction {
       '#options' => $options,
       '#default_value' => isset($values['ad_tag']) ? $values['ad_tag'] : [],
     ];
+    $form['values']['add_type'] = [
+      '#type' => 'select',
+      '#title' => t('Type'),
+      '#options' => [
+        'static' => t('Static'),
+        'dynamic' => t('Dynamic append'),
+      ],
+      '#default_value' => isset($values['add_type']) ? $values['add_type'] : [],
+      '#description' => t('.... TO DO ......'),
+    ];
+    $form['values']['onscroll'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Add on OnScroll'),
+    );
     $form['values']['ad_placement'] = [
       '#title' => t('Ad Placement'),
       '#description' => t('Enter the CSS selector where you wish to ad unit to render.'),
-      '#type' => 'textfield',
-      '#size' => 90,
+      '#type' => 'textarea',
       '#default_value' => isset($values['ad_placement']) ? $values['ad_placement'] : '',
     ];
     $form['values']['top'] = [
@@ -69,6 +82,11 @@ class LazyLoadAdSlotContextReaction extends context_reaction {
 
     return $form;
   }
+
+
+  // @TODO: Validate the combination of chosen option and the selectors itself.
+  // 1) onScroll type can have just one selector;
+  // 2) dynamic type can have one or more selectors;
 
   // Execute context.
   function execute() {

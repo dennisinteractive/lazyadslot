@@ -64,14 +64,14 @@ function lazyadslot_page_build(&$page) {
 
       $dfp_tag = dfp_tag($values['ad_tag']);
 
-//      dsm($values, '$values');
-//      dsm($dfp_tag, '$values');
-
       $lazyadslot_tags[$key] = $values;
       $lazyadslot_tags[$key]['targeting'] = $tag->targeting;
+      // Arraying the selectors.
+      $lazyadslot_tags[$key]['ad_placement'] = explode(PHP_EOL, $values['ad_placement']);
       // Render the tag.
       $lazyadslot_tags[$key]['renderedDfp'] = render($dfp_tag);
     }
+
     // Add the javascript.
     _lazyadslot_add_js($lazyadslot_tags);
   }
