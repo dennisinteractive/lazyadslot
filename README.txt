@@ -1,8 +1,8 @@
-Module: Taboola DFP Native
+Module: Lazy Loading Ad Slots
 
 Description
 ===========
-Provide a context reaction for integration with DFP Taboola native.
+Provide a context reaction which use the lazyadslot JS module.
 
 Installation
 ============
@@ -11,8 +11,7 @@ Copy the module directory in to your Drupal:
 
 Configuration
 =============
-Create a new context and choose the reaction Taboola DFP Native.
-Select which DFP Ad Tag you want to use and provide the selector.
+******
 
 Documentation
 =============
