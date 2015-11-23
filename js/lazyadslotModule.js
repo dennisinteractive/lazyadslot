@@ -1,15 +1,34 @@
-(function (root, factory) {
-  if (typeof define === 'function' && define.amd) {
-    // AMD
-    define(['jquery'], factory);
-  } else if (typeof exports === 'object') {
-    // Node, CommonJS-like
-    module.exports = factory(require('jquery'));
-  } else {
-    // Browser globals (root is window)
-    root.lazyLoadAdSlot = factory(root.jQuery);
+//(function (root, factory) {
+//  if (typeof define === 'function' && define.amd) {
+//    // AMD
+//    define(['jquery'], factory);
+//  } else if (typeof exports === 'object') {
+//    // Node, CommonJS-like
+//    module.exports = factory(require('jquery'));
+//  } else {
+//    // Browser globals (root is window)
+//    root.lazyLoadAdSlot = factory(root.jQuery);
+//  }
+//}(this, function ($) {
+
+;(function (name, context, factory) {
+
+
+  var matchjQuery = window.jQuery;
+
+  if (typeof module !== 'undefined' && module.exports) {
+    module.exports = factory(matchjQuery);
   }
-}(this, function ($) {
+  else if (typeof define === 'function' && define.amd) {
+    define(function () {
+      return (context[name] = factory(matchjQuery));
+    });
+  }
+  else {
+    context[name] = factory(matchjQuery);
+  }
+}('lazyLoadAdSlot', this, function ($) {
+
   'use strict';
 
   var lazyLoadAdSlot = {
@@ -60,34 +79,40 @@
     appendAfter: function (el, html) {
       $(html).insertAfter(el);
     },
-    detectOnScroll: function () {
+    detectSlot: function () {
       var tag = this.getTag(),
         method = this.getMethod();
-      for (var i = 0, len = tag.ad_placement.length; i < len; i++) {
 
-        var tag = this.getTag();
-        var delta = i + 1;
-        var el = $(tag.ad_placement[i]);
+      for (var i = 0, len = tag.ad_placement.length; i < len; i++) {
+        // Get the tag one more time
+        // as we check if the add was added for specific selector.
+        var tag = this.getTag(),
+          el = $(tag.ad_placement[i]),
+          onScrollEnabled = (tag.onscroll === 1);
 
         // Check if the element exists.
         if (!el.length) {
           continue;
         }
 
-        var offset = el.offset(),
-          windowTop = $(window).scrollTop(),
-          elTopOffset = offset.top,
-          windowHeight = $(window).height(),
-        // Used for comparison on initial page load.
-          loadHeightInitial = windowTop + elTopOffset + el.height() - this.top,
-        // Used for comparison on page scroll.
-          loadHeightScroll = elTopOffset + el.height() - this.top;
+        // Detect needed variable only when they are needed.
+        if (onScrollEnabled) {
+          var offset = el.offset(),
+            windowTop = $(window).scrollTop(),
+            elTopOffset = offset.top,
+            windowHeight = $(window).height(),
+          // Used for comparison on initial page load.
+            loadHeightInitial = windowTop + elTopOffset + el.height() - this.top,
+          // Used for comparison on page scroll.
+            loadHeightScroll = elTopOffset + el.height() - this.top;
+        }
 
         if (
-          !tag.added['selector_' + i]
-          && ((windowHeight > loadHeightInitial) || (windowTop + windowHeight) >= loadHeightScroll)
+          (!onScrollEnabled && !tag.added['selector_' + i]) ||
+          (onScrollEnabled && !tag.added['selector_' + i]
+            && ((windowHeight > loadHeightInitial) || (windowTop + windowHeight) >= loadHeightScroll)
+          )
         ) {
-          //console.debug('SPOTTED');
           tag.added['selector_' + i] = true;
           this.setTag(tag);
 
@@ -96,7 +121,7 @@
             this.appendAfter(el, tag.renderedDfp);
           }
           else if (method === 'multiple') {
-            this.addSlotMultiple(tag, delta, el);
+            this.addSlotMultiple(tag, i + 1, el);
           }
           else {
             console.debug('No known implementation method detected.');
@@ -134,20 +159,17 @@
       switch (tag.onscroll) {
         case 1:
           // Initial detection.
-          $(window).scroll(self.detectOnScroll()).trigger('scroll');
+          $(window).scroll(self.detectSlot()).trigger('scroll');
 
           // Act on the actual scroll.
           $(window).on('scroll', function () {
-            self.detectOnScroll();
+            self.detectSlot();
           });
 
           break;
 
         default:
-          //detectLoad();
-          // TODO if we need it.
-          console.debug('Instantly lazy load of the AdSlot is not supported yet.');
-
+          this.detectSlot();
       }
     },
   };
