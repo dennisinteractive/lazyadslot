@@ -64,9 +64,8 @@ function lazyadslot_page_build(&$page) {
 
       // Process the tag.
       $dfp_tag = dfp_tag($values['ad_tag']);
-
       $lazyadslot_tags[$key] = $values;
-      $lazyadslot_tags[$key]['targeting'] = $tag->targeting;
+
       // Arraying the selectors.
       $lazyadslot_tags[$key]['ad_placement'] = explode(PHP_EOL, $values['ad_placement']);
 

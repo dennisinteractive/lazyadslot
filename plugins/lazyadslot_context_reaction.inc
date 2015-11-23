@@ -53,7 +53,7 @@ class LazyLoadAdSlotContextReaction extends context_reaction {
     ];
     $form['values']['ad_placement'] = [
       '#title' => t('Ad Placement'),
-      '#description' => t('Enter the CSS selector where you wish to ad unit to render.'),
+      '#description' => t('Enter the CSS selector where you wish to ad unit to render. In case you want to use :nth-child type of selector, please use instead the :nth-of-type selector to achieve expected result.'),
       '#type' => 'textarea',
       '#default_value' => isset($values['ad_placement']) ? $values['ad_placement'] : '',
     ];
@@ -72,8 +72,19 @@ class LazyLoadAdSlotContextReaction extends context_reaction {
     return $form;
   }
 
-  // @TODO: Validate the selector value.
-  // 1) At least one selector is required;
+  /**
+   * Options form submit handler.
+   *
+   * As the context do not provide any validate method, will display a error
+   * after all the values are submitted already.
+   * (#required in the form element will break module non related contexts.)
+   */
+  function options_form_submit($values) {
+    if (empty($values['values']['ad_placement'])) {
+      form_set_error('reactions[plugins][lazyadslot][values][ad_placement]', t('Please provide at least one selector.'));
+    }
+    return $values;
+  }
 
   // Execute context.
   function execute() {

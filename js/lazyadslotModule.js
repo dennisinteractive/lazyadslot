@@ -12,11 +12,10 @@
 }(this, function ($) {
   'use strict';
 
-  var lazyLoadAdSlotold = {
+  var lazyLoadAdSlot = {
 
     adSlot: {},
     top: 1,
-    //nextSlotId: 1,
 
     setTag: function (tag) {
       this.adSlot = tag;
@@ -35,7 +34,6 @@
     checkMethod: function () {
       var selectorQTY = this.adSlot.ad_placement.length;
 
-      // todo: This seems to be obsolete as we can check this at the object initialisation.
       if (selectorQTY === 0) {
         throw new Error('You need to provide at least on selector.');
       }
@@ -55,9 +53,8 @@
         console.debug(err);
       }
     },
-    // todo: Implement.
+    // todo: Implement(not tested).
     appendBefore: function (el, html) {
-      // not tested.
       $(html).insertBefore(el);
     },
     appendAfter: function (el, html) {
@@ -72,8 +69,7 @@
         var delta = i + 1;
         var el = $(tag.ad_placement[i]);
 
-        // todo: After adding the slot definition, selectors get confused.
-        //       Make sure this behaviour is understood/fixed.
+        // Check if the element exists.
         if (!el.length) {
           continue;
         }
@@ -103,33 +99,26 @@
             this.addSlotMultiple(tag, delta, el);
           }
           else {
-            console.debug('No method detected.');
+            console.debug('No known implementation method detected.');
           }
 
         }
       }
     },
     addSlotMultiple: function (tag, delta, el) {
-      // Append delta in order to clone slot multiple times.
-      var regex = new RegExp(tag.ad_tag, 'g');
-      var ad_slot = tag.renderedDfp.replace(regex, tag.ad_tag + '_' + delta);
+      // Generate new slot definition/display with incremental id as unique.
+      var currentIDregex = new RegExp(tag.ad_tag, 'g'),
+        newID = tag.ad_tag + '_' + delta,
+        adSlotDisplay = tag.renderedDfp.replace(currentIDregex, newID);
 
-      // Prepare the Slot Definition for execution.
-      var adSlotDefinition = tag.slotDefinition.replace(regex, tag.ad_tag + '_' + delta);
+      // Generate new slot display with incremental id as unique.
+      var adSlotDefinition = tag.slotDefinition.replace(currentIDregex, newID);
 
-      // Append the Slot definition and the Slot itself.
-      // todo: Append the script inside the wrapper.
-      this.appendAfter(el, '<script>' + adSlotDefinition + '</script>' + ad_slot);
+      // Append the Slot definition/display.
+      this.appendAfter(el, $(adSlotDisplay).prepend('<script>' + adSlotDefinition + '</script>'));
+
       // Refresh the tag.
-      googletag.pubads().refresh([googletag.slots[tag.ad_tag + '-' + delta]]);
-    },
-    // todo.
-    generateNextSlotName: function () {
-      return 'dynamicAdSlot' + this.nextSlotId++;
-    },
-    // todo.
-    getNextAd: function () {
-      var slotName = this.generateNextSlotName();
+      googletag.pubads().refresh([googletag.slots[newID]]);
     },
     // Append the Ad to the page.
     execute: function (tag) {
@@ -139,22 +128,23 @@
       this.setTag(tag);
       this.top = this.getTop(tag);
 
-      var lazyLoadObj = this;
+      self = this;
 
       // Trigger needed action by onScroll request.
       switch (tag.onscroll) {
         case 1:
           // Initial detection.
-          $(window).scroll(lazyLoadObj.detectOnScroll()).trigger('scroll');
+          $(window).scroll(self.detectOnScroll()).trigger('scroll');
 
           // Act on the actual scroll.
           $(window).on('scroll', function () {
-            lazyLoadObj.detectOnScroll();
+            self.detectOnScroll();
           });
 
           break;
 
         default:
+          //detectLoad();
           // TODO if we need it.
           console.debug('Instantly lazy load of the AdSlot is not supported yet.');
 
@@ -165,8 +155,8 @@
   // Starting point.
   return function (AdSlotTag) {
     return !!(window.googletag && AdSlotTag &&
-    $(AdSlotTag.ad_placement).length &&
-    lazyLoadAdSlotold.execute(AdSlotTag));
+    AdSlotTag.ad_placement.length &&
+    lazyLoadAdSlot.execute(AdSlotTag));
   };
 
 }));
