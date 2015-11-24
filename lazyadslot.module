@@ -70,16 +70,12 @@ function lazyadslot_page_build(&$page) {
       $lazyadslot_tags[$key]['ad_placement'] = explode(PHP_EOL, $values['ad_placement']);
 
       // Render the tag.
-      // todo: Think about it.
-      // If we have to show the Ad in a single place, rendering the $dfp_tag
-      // is ok as this will add related JS which will define the Slot
-      // and then we just place the Ad placement.
-      // However, if want to generate the same defined DFP in multiple places
-      // this is not necessary, but because of DFP module construction - we
-      // can't avoid the fact that DFP module will add the Slot definition
-      // which actually is not used. This is not blocking us to do the job,
-      // it just means that we have an unneeded Slot definition,
       $lazyadslot_tags[$key]['renderedDfp'] = render($dfp_tag);
+
+      // Remove the Slot definition added by DFP module
+      // as we add our own replica of the definition.
+      _lazyadslot_slot_to_remove($values['ad_tag']);
+
       // We are going to need it in case we want to generate
       // the same defined DFP in multiple places.
       $lazyadslot_tags[$key]['slotDefinition'] = _lazyload_dfp_js_slot_definition($tag);
@@ -168,8 +164,42 @@ function _lazyadslot_add_js($tags) {
     ],
   ], 'setting');
 
-  // This will be added/loaded as a library.
-  drupal_add_js(drupal_get_path('module', 'lazyadslot') . '/js/lazyadslotModule.js');
-  // The usage.
+  // Load the library.
   drupal_add_js(drupal_get_path('module', 'lazyadslot') . '/js/lazyadslot.js');
+  // The usage.
+  drupal_add_js(drupal_get_path('module', 'lazyadslot') . '/js/lazyadslot_init.js');
+}
+
+/**
+ * Helper to statically store the slot to be removed in hook_js_alter().
+ *
+ * @param string $ad_slot_machinename
+ *    String The machine name of the slot.
+ * @return string $machinename
+ */
+function _lazyadslot_slot_to_remove($ad_slot_machinename = NULL) {
+  $machinename = &drupal_static(__FUNCTION__, FALSE);
+  if (!empty($ad_slot_machinename)) {
+    $machinename = $ad_slot_machinename;
+  }
+  return $machinename;
+}
+
+/**
+ * Implements hook_js_alter().
+ *
+ * Remove unneeded defined DFP slot.
+ */
+function lazyadslot_js_alter(&$javascript) {
+  $ad_slot_machinename = _lazyadslot_slot_to_remove();
+
+  // Iterate of all javascript items to get dfp slots.
+  foreach ($javascript as $key => $value) {
+    if (isset($value['data']) && !is_array($value['data']) && strstr($value['data'], 'googletag')) {
+      if (preg_match('/' . 'googletag\.slots\[\"' . $ad_slot_machinename . '\"\]\s*=\s*googletag\.define[^\(]*?Slot\(' . '/', $value['data'])) {
+        unset($javascript[$key]);
+        return;
+      }
+    }
+  }
 }
