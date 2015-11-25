@@ -1,0 +1,6 @@
+name = Lazy Loading Ad Slots
+description = Lazy Loading of Ad Slots based on parameters from context reaction
+package = Advertising
+core = 7.x
+dependencies[] = context
+dependencies[] = dfp
