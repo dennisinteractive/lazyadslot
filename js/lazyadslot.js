@@ -44,19 +44,12 @@
         console.debug(err);
       }
     },
+    // todo: Implement(not tested).
     appendBefore: function (el, html) {
       $(html).insertBefore(el);
     },
     appendAfter: function (el, html) {
       $(html).insertAfter(el);
-    },
-    pushAd: function (el, html) {
-      if (this.adSlot.attach_how === 'before') {
-        this.appendBefore(el, html);
-      }
-      else {
-        this.appendAfter(el, html);
-      }
     },
     detectSlot: function () {
       var tag = this.getTag(),
@@ -117,10 +110,13 @@
       // Generate new slot definition/display with incremental id as unique.
       var currentIDregex = new RegExp(tag.ad_tag, 'g'),
         newID = tag.ad_tag + '_' + delta,
-        adSlotRendered = tag.renderedDfp.replace(currentIDregex, newID);
+        adSlotDisplay = tag.renderedDfp.replace(currentIDregex, newID);
 
-      // Append the Slot declaration/display.
-      this.pushAd(el, $(adSlotRendered));
+      // Generate new slot display with incremental id as unique.
+      var adSlotDefinition = tag.slotDefinition.replace(currentIDregex, newID);
+
+      // Append the Slot definition/display.
+      this.appendAfter(el, $(adSlotDisplay).prepend('<script>' + adSlotDefinition + '</script>'));
 
       // Refresh the tag.
       googletag.pubads().refresh([googletag.slots[newID]]);
@@ -133,10 +129,13 @@
       // Generate new slot definition/display with incremental id as unique.
       var currentIDregex = new RegExp(tag.ad_tag, 'g'),
         newID = tag.ad_tag + '_' + delta,
-        adSlotRendered = tag.renderedDfp.replace(currentIDregex, newID);
+        adSlotDisplay = tag.renderedDfp.replace(currentIDregex, newID);
 
-      // Append the Slot declaration/display.
-      this.pushAd(el, $(adSlotRendered));
+      // Generate new slot display with incremental id as unique.
+      var adSlotDefinition = tag.slotDefinition.replace(currentIDregex, newID);
+
+      // Append the Slot definition/display.
+      this.appendAfter(el, $(adSlotDisplay).prepend('<script>' + adSlotDefinition + '</script>'));
 
       // Refresh the tag.
       googletag.pubads().refresh([googletag.slots[newID]]);
@@ -151,10 +150,6 @@
       self = this;
 
       // Trigger needed action by onScroll request.
-      // Todo: implement debounce.
-      // see:
-      // - https://davidwalsh.name/javascript-debounce-function
-      // - http://underscorejs.org/docs/underscore.html#section-83
       switch (tag.onscroll) {
         case 1:
           // Initial detection.
