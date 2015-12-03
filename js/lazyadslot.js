@@ -7,6 +7,8 @@
 
     adSlot: {},
     top: 1,
+    lazyAdSlotCounter: {},
+    //lazyAdSlotAdded: [],
 
     setTag: function (tag) {
       this.adSlot = tag;
@@ -44,12 +46,19 @@
         console.debug(err);
       }
     },
-    // todo: Implement(not tested).
     appendBefore: function (el, html) {
       $(html).insertBefore(el);
     },
     appendAfter: function (el, html) {
       $(html).insertAfter(el);
+    },
+    pushAd: function (el, html) {
+      if (this.adSlot.attach_how === 'before') {
+        this.appendBefore(el, html);
+      }
+      else {
+        this.appendAfter(el, html);
+      }
     },
     detectSlot: function () {
       var tag = this.getTag(),
@@ -79,13 +88,20 @@
             loadHeightScroll = elTopOffset + el.height() - this.top;
         }
 
+        var uniqueKey = tag.ad_tag + '_' + tag.ad_placement[i] + '_' + i;
+
+        console.log('test');
+
         if (
-          (!onScrollEnabled && !tag.added['selector_' + i]) ||
-          (onScrollEnabled && !tag.added['selector_' + i]
+          (!onScrollEnabled && !tag.added[uniqueKey]) ||
+          (onScrollEnabled && (!tag.added[uniqueKey])
             && ((windowHeight > loadHeightInitial) || (windowTop + windowHeight) >= loadHeightScroll)
           )
         ) {
-          tag.added['selector_' + i] = true;
+
+
+
+          tag.added[uniqueKey] = true;
           this.setTag(tag);
 
           // Add the slot.
@@ -98,10 +114,28 @@
           else {
             console.debug('No known implementation method detected.');
           }
-
         }
       }
     },
+
+    increaseCounter: function(slot_name) {
+
+
+      if (isNaN(this.lazyAdSlotCounter[slot_name])) {
+        this.lazyAdSlotCounter[slot_name] = 0;
+      }
+      else {
+         this.lazyAdSlotCounter[slot_name]++;
+
+      }
+
+
+
+      console.debug(this.lazyAdSlotCounter);
+
+      return this.lazyAdSlotCounter[slot_name];
+    },
+
     /**
      * Identical as this.addSlotMultiple.
      * Keep it separate for now.
@@ -109,14 +143,13 @@
     addSlotSingle: function (tag, delta, el) {
       // Generate new slot definition/display with incremental id as unique.
       var currentIDregex = new RegExp(tag.ad_tag, 'g'),
-        newID = tag.ad_tag + '_' + delta,
-        adSlotDisplay = tag.renderedDfp.replace(currentIDregex, newID);
+        newID = tag.ad_tag + '_' + this.increaseCounter(tag.ad_tag),
+        adSlotRendered = tag.renderedDfp.replace(currentIDregex, newID);
 
-      // Generate new slot display with incremental id as unique.
-      var adSlotDefinition = tag.slotDefinition.replace(currentIDregex, newID);
+      console.debug(adSlotRendered);
 
-      // Append the Slot definition/display.
-      this.appendAfter(el, $(adSlotDisplay).prepend('<script>' + adSlotDefinition + '</script>'));
+      // Append the Slot declaration/display.
+      this.pushAd(el, $(adSlotRendered));
 
       // Refresh the tag.
       googletag.pubads().refresh([googletag.slots[newID]]);
@@ -128,27 +161,38 @@
     addSlotMultiple: function (tag, delta, el) {
       // Generate new slot definition/display with incremental id as unique.
       var currentIDregex = new RegExp(tag.ad_tag, 'g'),
-        newID = tag.ad_tag + '_' + delta,
-        adSlotDisplay = tag.renderedDfp.replace(currentIDregex, newID);
+        newID = tag.ad_tag + '_' + this.increaseCounter(tag.ad_tag),
+        adSlotRendered = tag.renderedDfp.replace(currentIDregex, newID);
 
-      // Generate new slot display with incremental id as unique.
-      var adSlotDefinition = tag.slotDefinition.replace(currentIDregex, newID);
+      console.debug(adSlotRendered);
 
-      // Append the Slot definition/display.
-      this.appendAfter(el, $(adSlotDisplay).prepend('<script>' + adSlotDefinition + '</script>'));
+      // Append the Slot declaration/display.
+      this.pushAd(el, $(adSlotRendered));
 
       // Refresh the tag.
       googletag.pubads().refresh([googletag.slots[newID]]);
     },
     // Append the Ad to the page.
     execute: function (tag) {
-      // Indicator to load the Ad only once.
+      self = this;
+
+
+      // todo: Move these lines into a separate method.
+      // Initialize the global counter per Slot if needed.
+      //if (isNaN(this.lazyAdSlotCounter[tag.ad_tag])) {
+      //  this.lazyAdSlotCounter[tag.ad_tag] = 0;
+      //}
+
+      // The unique key push the Ad only once
+      // (used when multiple selectors are provided per tag).
       tag.added = [];
       this.setTag(tag);
       this.top = this.getTop(tag);
 
-      self = this;
-
+      // todo: implement debounce.
+      // see:
+      // - https://davidwalsh.name/javascript-debounce-function
+      // - http://underscorejs.org/docs/underscore.html#section-83
       // Trigger needed action by onScroll request.
       switch (tag.onscroll) {
         case 1:

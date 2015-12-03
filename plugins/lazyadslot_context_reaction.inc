@@ -23,7 +23,6 @@ class LazyLoadAdSlotContextReaction extends context_reaction {
     }
 
     // Get a list of all the tags.
-    $options = [];
     $tags = dfp_tag_load_all();
     if (empty($tags)) {
       return [
@@ -31,6 +30,7 @@ class LazyLoadAdSlotContextReaction extends context_reaction {
       ];
     }
 
+    $options = [];
     foreach ($tags as $tag) {
       $options[$tag->machinename] = $tag->slot;
     }
@@ -51,12 +51,6 @@ class LazyLoadAdSlotContextReaction extends context_reaction {
       '#description' => t('Load the Ads onScroll or instantly.'),
       '#default_value' => !empty($values['onscroll']),
     ];
-    $form['values']['ad_placement'] = [
-      '#title' => t('Ad Placement'),
-      '#description' => t('Enter the CSS selector where you wish to ad unit to render. In case you want to use :nth-child type of selector, please use instead the :nth-of-type selector to achieve expected result.'),
-      '#type' => 'textarea',
-      '#default_value' => isset($values['ad_placement']) ? $values['ad_placement'] : '',
-    ];
     $form['values']['top'] = [
       '#title' => t('Top pixels'),
       '#description' => t('Set the value(px) for when to add the Ad.'),
@@ -66,7 +60,22 @@ class LazyLoadAdSlotContextReaction extends context_reaction {
       '#states' => [
         'invisible' => [':input[name="reactions[plugins][lazyadslot][values][onscroll]"]' => ['checked' => FALSE]],
       ],
-
+    ];
+    $form['values']['ad_placement'] = [
+      '#title' => t('Ad Placement'),
+      '#description' => t('Enter the CSS selector where you wish to ad unit to render. In case you want to use :nth-child type of selector, please use instead the :nth-of-type selector to achieve expected result.'),
+      '#type' => 'textarea',
+      '#default_value' => isset($values['ad_placement']) ? $values['ad_placement'] : '',
+    ];
+    $form['values']['attach_how'] = [
+      '#type' => 'select',
+      '#title' => t('Attach how'),
+      '#description' => t('Should the Ad be attached before or after specified selector?<br/>Not Recommended to be used in combination with OnScroll option(high calculation is not implemented).'),
+      '#options' => [
+        'after' => 'After',
+        'before' => 'Before',
+      ],
+      '#default_value' => isset($values['attach_how']) ? $values['attach_how'] : [],
     ];
 
     return $form;
