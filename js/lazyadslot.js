@@ -30,7 +30,8 @@ var lazyLoadAdSlot = lazyLoadAdSlot || {};
       }
     },
     detectSlot: function () {
-      self = this;
+      var $window = $(window);
+      var self = this;
 
       for (var i = 0; i < self.adSlot.ad_placement.length; i++) {
         var el = $(self.adSlot.ad_placement[i]),
@@ -44,9 +45,9 @@ var lazyLoadAdSlot = lazyLoadAdSlot || {};
         // Detect needed variable only when they are needed.
         if (onScrollEnabled) {
           var offset = el.offset(),
-            windowTop = $(window).scrollTop(),
+            windowTop = $window.scrollTop(),
             elTopOffset = offset.top,
-            windowHeight = $(window).height(),
+            windowHeight = $window.height(),
           // Used for comparison on initial page load.
             loadHeightInitial = windowTop + elTopOffset + el.height() - this.top,
           // Used for comparison on page scroll.
@@ -108,7 +109,7 @@ var lazyLoadAdSlot = lazyLoadAdSlot || {};
     },
     // Append the Ad to the page.
     execute: function (tag) {
-      self = this;
+      var self = this;
       this.top = this.getTop(tag);
       tag.added = [];
       this.adSlot = tag;
@@ -121,8 +122,7 @@ var lazyLoadAdSlot = lazyLoadAdSlot || {};
       switch (tag.onscroll) {
         case 1:
           // Initial detection.
-          self.detectSlot();
-          //$(window).scroll(self.detectSlot()).trigger('scroll');
+          this.detectSlot();
 
           // Act on the actual scroll.
           $(window).on('scroll', function () {
@@ -132,7 +132,7 @@ var lazyLoadAdSlot = lazyLoadAdSlot || {};
           break;
 
         default:
-          self.detectSlot();
+          this.detectSlot();
       }
     },
   };
