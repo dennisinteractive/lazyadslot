@@ -52,6 +52,7 @@
       $(html).insertAfter(el);
     },
     detectSlot: function () {
+      var $window = $(window);
       var tag = this.getTag(),
         method = this.getMethod();
 
@@ -70,9 +71,9 @@
         // Detect needed variable only when they are needed.
         if (onScrollEnabled) {
           var offset = el.offset(),
-            windowTop = $(window).scrollTop(),
+            windowTop = $window.scrollTop(),
             elTopOffset = offset.top,
-            windowHeight = $(window).height(),
+            windowHeight = $window.height(),
           // Used for comparison on initial page load.
             loadHeightInitial = windowTop + elTopOffset + el.height() - this.top,
           // Used for comparison on page scroll.
@@ -143,17 +144,17 @@
     // Append the Ad to the page.
     execute: function (tag) {
       // Indicator to load the Ad only once.
+      var self = this;
+
       tag.added = [];
       this.setTag(tag);
       this.top = this.getTop(tag);
-
-      self = this;
 
       // Trigger needed action by onScroll request.
       switch (tag.onscroll) {
         case 1:
           // Initial detection.
-          $(window).scroll(self.detectSlot()).trigger('scroll');
+          this.detectSlot();
 
           // Act on the actual scroll.
           $(window).on('scroll', function () {
@@ -163,7 +164,7 @@
           break;
 
         default:
-          self.detectSlot();
+          this.detectSlot();
       }
     },
   };
