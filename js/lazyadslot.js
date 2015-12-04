@@ -92,7 +92,6 @@ var lazyLoadAdSlot = lazyLoadAdSlot || {};
     /**
      * Generate ne slot ID, and push the Ad into the page.
      */
-    // addSlotSingle
     addSlot: function (tag, el) {
       // Generate new slot definition/display with incremental id as unique.
       var currentIDregex = new RegExp(tag.ad_tag, 'g'),
@@ -122,7 +121,8 @@ var lazyLoadAdSlot = lazyLoadAdSlot || {};
       switch (tag.onscroll) {
         case 1:
           // Initial detection.
-          $(window).scroll(self.detectSlot()).trigger('scroll');
+          self.detectSlot();
+          //$(window).scroll(self.detectSlot()).trigger('scroll');
 
           // Act on the actual scroll.
           $(window).on('scroll', function () {
