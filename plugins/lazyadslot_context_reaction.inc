@@ -77,7 +77,12 @@ class LazyLoadAdSlotContextReaction extends context_reaction {
       ],
       '#default_value' => isset($values['attach_how']) ? $values['attach_how'] : [],
     ];
-
+    $form['values']['disable_init_load'] = [
+      '#type' => 'checkbox',
+      '#title' => t('Disable initial ad load'),
+      '#description' => t('The Ad won\'t be rendered on the page until you call the function lazyLoadAdSlot() in JS.'),
+      '#default_value' => !empty($values['disable_init_load']),
+    ];
     return $form;
   }
 

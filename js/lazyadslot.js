@@ -1,50 +1,19 @@
-(function (root, factory) {
-  // Browser globals.
-  root.lazyLoadAdSlot = factory(root.jQuery);
-}(this, function ($) {
+var lazyLoadAdSlot = lazyLoadAdSlot || {};
+
+(function ($) {
+
   'use strict';
-  var lazyLoadAdSlot = {
+
+  var lazyLoadAd = {
 
     adSlot: {},
+    adSlotCounter: {},
     top: 1,
-    lazyAdSlotCounter: {},
-    //lazyAdSlotAdded: [],
+    slotId: '',
 
-    setTag: function (tag) {
-      this.adSlot = tag;
-    },
-    getTag: function () {
-      return this.adSlot;
-    },
     getTop: function (tag) {
       var initialTop = parseInt(tag.top);
       return isNaN(initialTop) ? this.top : initialTop;
-    },
-    /**
-     * We need at least one selector, so check for it.
-     * @returns {string}
-     */
-    checkMethod: function () {
-      var selectorQTY = this.adSlot.ad_placement.length;
-
-      if (selectorQTY === 0) {
-        throw new Error('You need to provide at least on selector.');
-      }
-
-      return selectorQTY > 1 ? 'multiple' : 'single';
-    },
-    /**
-     * Get the method.
-     * @returns {string|thrown error}
-     */
-    getMethod: function () {
-      // Validate it first.
-      try {
-        return this.checkMethod();
-      }
-      catch (err) {
-        console.debug(err);
-      }
     },
     appendBefore: function (el, html) {
       $(html).insertBefore(el);
@@ -61,15 +30,11 @@
       }
     },
     detectSlot: function () {
-      var tag = this.getTag(),
-        method = this.getMethod();
+      self = this;
 
-      for (var i = 0; i < tag.ad_placement.length; i++) {
-        // Get the tag one more time
-        // as we check if the add was added for specific selector.
-        var tag = this.getTag(),
-          el = $(tag.ad_placement[i]),
-          onScrollEnabled = (tag.onscroll === 1);
+      for (var i = 0; i < self.adSlot.ad_placement.length; i++) {
+        var el = $(self.adSlot.ad_placement[i]),
+          onScrollEnabled = (self.adSlot.onscroll === 1);
 
         // Check if the element exists.
         if (!el.length) {
@@ -88,106 +53,66 @@
             loadHeightScroll = elTopOffset + el.height() - this.top;
         }
 
-        var uniqueKey = tag.ad_tag + '_' + tag.ad_placement[i] + '_' + i;
-
-        console.log('test');
+        // A unique key to prevent repeating action when multiple selectors are provided.
+        var uniqueKey = self.adSlot.ad_tag + '_' + self.adSlot.ad_placement[i];
 
         if (
-          (!onScrollEnabled && !tag.added[uniqueKey]) ||
-          (onScrollEnabled && (!tag.added[uniqueKey])
+          (!onScrollEnabled && !self.adSlot.added[uniqueKey]) ||
+          (onScrollEnabled && (!self.adSlot.added[uniqueKey])
             && ((windowHeight > loadHeightInitial) || (windowTop + windowHeight) >= loadHeightScroll)
           )
         ) {
 
+          self.adSlot.added[uniqueKey] = true;
 
-
-          tag.added[uniqueKey] = true;
-          this.setTag(tag);
-
-          // Add the slot.
-          if (method === 'single') {
-            this.addSlotSingle(tag, i, el);
-          }
-          else if (method === 'multiple') {
-            this.addSlotMultiple(tag, i, el);
-          }
-          else {
-            console.debug('No known implementation method detected.');
-          }
+          // Push the slot.
+          this.addSlot(self.adSlot, el);
         }
       }
     },
+    /**
+     * Increase the counter per specified slot.
+     *
+     * @param slotName
+     * @returns Int
+     *   Counter value.
+     */
+    increaseSlotCounter: function (slotName) {
 
-    increaseCounter: function(slot_name) {
-
-
-      if (isNaN(this.lazyAdSlotCounter[slot_name])) {
-        this.lazyAdSlotCounter[slot_name] = 0;
+      if (isNaN(this.adSlotCounter[slotName])) {
+        this.adSlotCounter[slotName] = 0;
       }
       else {
-         this.lazyAdSlotCounter[slot_name]++;
-
+        this.adSlotCounter[slotName]++;
       }
 
-
-
-      console.debug(this.lazyAdSlotCounter);
-
-      return this.lazyAdSlotCounter[slot_name];
+      return this.adSlotCounter[slotName];
     },
 
     /**
-     * Identical as this.addSlotMultiple.
-     * Keep it separate for now.
+     * Generate ne slot ID, and push the Ad into the page.
      */
-    addSlotSingle: function (tag, delta, el) {
+    // addSlotSingle
+    addSlot: function (tag, el) {
       // Generate new slot definition/display with incremental id as unique.
       var currentIDregex = new RegExp(tag.ad_tag, 'g'),
-        newID = tag.ad_tag + '_' + this.increaseCounter(tag.ad_tag),
+        newID = tag.ad_tag + '_' + this.increaseSlotCounter(tag.ad_tag),
         adSlotRendered = tag.renderedDfp.replace(currentIDregex, newID);
-
-      console.debug(adSlotRendered);
 
       // Append the Slot declaration/display.
       this.pushAd(el, $(adSlotRendered));
 
       // Refresh the tag.
       googletag.pubads().refresh([googletag.slots[newID]]);
-    },
-    /**
-     * Identical as this.addSlotSingle.
-     * Keep it as it is for now.
-     */
-    addSlotMultiple: function (tag, delta, el) {
-      // Generate new slot definition/display with incremental id as unique.
-      var currentIDregex = new RegExp(tag.ad_tag, 'g'),
-        newID = tag.ad_tag + '_' + this.increaseCounter(tag.ad_tag),
-        adSlotRendered = tag.renderedDfp.replace(currentIDregex, newID);
 
-      console.debug(adSlotRendered);
-
-      // Append the Slot declaration/display.
-      this.pushAd(el, $(adSlotRendered));
-
-      // Refresh the tag.
-      googletag.pubads().refresh([googletag.slots[newID]]);
+      this.slotId = newID;
     },
     // Append the Ad to the page.
     execute: function (tag) {
       self = this;
-
-
-      // todo: Move these lines into a separate method.
-      // Initialize the global counter per Slot if needed.
-      //if (isNaN(this.lazyAdSlotCounter[tag.ad_tag])) {
-      //  this.lazyAdSlotCounter[tag.ad_tag] = 0;
-      //}
-
-      // The unique key push the Ad only once
-      // (used when multiple selectors are provided per tag).
-      tag.added = [];
-      this.setTag(tag);
       this.top = this.getTop(tag);
+      tag.added = [];
+      this.adSlot = tag;
 
       // todo: implement debounce.
       // see:
@@ -212,11 +137,29 @@
     },
   };
 
-  // Starting point.
-  return function (AdSlotTag) {
-    return !!(window.googletag && AdSlotTag &&
-    $(AdSlotTag.ad_placement).length &&
-    lazyLoadAdSlot.execute(AdSlotTag));
+  // Initialization function.
+  lazyLoadAdSlot.init = function (AdSlotTag) {
+    if (!!(window.googletag && AdSlotTag && $(AdSlotTag.ad_placement).length)) {
+      lazyLoadAd.execute(AdSlotTag);
+      return lazyLoadAd;
+    }
   };
 
-}));
+})(jQuery);
+
+// Old definition
+//(function (root, factory) {
+//  // Browser globals.
+//  root.lazyLoadAdSlot = factory(root.jQuery);
+//}(this, function ($) {
+//
+//  'use strict';
+//
+//
+//  // Starting point.
+//  return function (AdSlotTag) {
+//    !!(window.googletag && AdSlotTag &&
+//    $(AdSlotTag.ad_placement).length &&
+//    lazyLoadAdSlot.execute(AdSlotTag));
+//  };
+//}
