@@ -94,7 +94,7 @@ class LazyLoadAdSlotContextReaction extends context_reaction {
    * (#required in the form element will break module non related contexts.)
    */
   function options_form_submit($values) {
-    if (empty($values['values']['ad_placement'])) {
+    if (empty($values['values']['ad_placement']) && empty($values['values']['disable_init_load'])) {
       form_set_error('reactions[plugins][lazyadslot][values][ad_placement]', t('Please provide at least one selector.'));
     }
     return $values;

@@ -40,18 +40,13 @@ function lazyadslot_context_plugins() {
  * the rendered dfp tag in specified location.
  * All the visibility rules should be controlled by the context.
  */
-function lazyadslot_page_build(&$page) {
+function lazyadslot_page_build() {
 
   $tags = [];
 
   // Execute lazyadslot plugin.
   if ($plugin = context_get_plugin('reaction', 'lazyadslot')) {
     $plugin->execute();
-
-    // Missing configuration.
-    //    if (empty($plugin->lazyadslot_tags)) {
-    //      return;
-    //    }
 
     foreach ($plugin->lazyadslot_tags as $key => $values) {
 
@@ -62,7 +57,7 @@ function lazyadslot_page_build(&$page) {
 
       // Check for existence.
       if (empty($tag)) {
-        drupal_set_message(t('Invalid dfp tag: %name', array('%name' => $ad_tag)), 'error');
+        drupal_set_message(t('Invalid dfp tag: %name', ['%name' => $ad_tag]), 'error');
         continue;
       }
 
@@ -89,7 +84,8 @@ function lazyadslot_page_build(&$page) {
         continue;
       }
 
-      // Load the ads even if "initial ad load" from dfp module is disabled.
+      // Remove "initial ad load" configuration
+      // as we are going to handle when the load is going to be loaded.
       if (variable_get('dfp_disable_init_load', 1)) {
         $slotDeclaration = str_ireplace('googletag.pubads().disableInitialLoad();', '', $slotDeclaration);
       }
@@ -128,7 +124,7 @@ function _lazyload_get_slot_declaration($ad_tag) {
  * Helper to add the javascript code for Taboola DFP Native.
  */
 function _lazyadslot_add_js($tags) {
-  // Load the library.
+  // Always load the library.
   drupal_add_js(drupal_get_path('module', 'lazyadslot') . '/js/lazyadslot.js');
 
   // Add collected JS configuration.
@@ -166,7 +162,6 @@ function _lazyadslot_slot_to_remove($ad_tag = NULL) {
  */
 function lazyadslot_js_alter(&$javascript) {
   $ad_tag = _lazyadslot_slot_to_remove();
-
   // Iterate of all javascript items to get dfp slots.
   foreach ($javascript as $key => $value) {
     if (isset($value['data']) && !is_array($value['data']) && strstr($value['data'], 'googletag')) {
@@ -175,5 +170,17 @@ function lazyadslot_js_alter(&$javascript) {
         return;
       }
     }
+  }
+}
+
+/**
+ * Implements hook_module_implements_alter().
+ */
+function lazyadslot_module_implements_alter(&$implementations, $hook) {
+  // Ensure that lazyadslot runs after dfp and context.
+  if (in_array($hook, ['page_build', 'js_alter'])) {
+    $module = ['lazyadslot' => $implementations['lazyadslot']];
+    unset($implementations['lazyadslot']);
+    $implementations = $implementations + $module;
   }
 }
