@@ -97,6 +97,9 @@ function lazyadslot_page_build() {
       $tags[$key]['renderedDfp'] = '<script>' . PHP_EOL . $slotDeclaration . PHP_EOL . '</script>' . PHP_EOL . $slotDisplay;
     }
 
+    // Allow modules to alter the final tags.
+    drupal_alter('lazyadslot_tags', $tags);
+
     // Add the javascript.
     _lazyadslot_add_js($tags);
   }
