@@ -90,6 +90,11 @@ function lazyadslot_page_build() {
         $slotDeclaration = str_ireplace('googletag.pubads().disableInitialLoad();', '', $slotDeclaration);
       }
 
+      // Wrap the slot declaration to be handled asynchronously if is setup so.
+      if (!empty($values['async_rendering']) && strpos($slotDeclaration, 'googletag.cmd.push') === FALSE) {
+        $slotDeclaration = 'googletag.cmd.push(function() {' . PHP_EOL . $slotDeclaration . PHP_EOL . '});';
+      }
+
       // Arraying the selectors.
       $tags[$key]['ad_placement'] = explode(PHP_EOL, $values['ad_placement']);
 

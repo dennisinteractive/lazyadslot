@@ -77,11 +77,17 @@ class LazyLoadAdSlotContextReaction extends context_reaction {
       ],
       '#default_value' => isset($values['attach_how']) ? $values['attach_how'] : [],
     ];
-    $form['values']['disable_init_load'] = [
+    $form['values']['disable_dom_rendering'] = [
       '#type' => 'checkbox',
-      '#title' => t('Disable initial ad load'),
+      '#title' => t('Don\'t render the Ad'),
       '#description' => t('The Ad won\'t be rendered on the page until you call the function lazyLoadAdSlot() in JS.'),
-      '#default_value' => !empty($values['disable_init_load']),
+      '#default_value' => !empty($values['disable_dom_rendering']),
+    ];
+    $form['values']['async_rendering'] = [
+      '#type' => 'checkbox',
+      '#title' => t('Async rendering'),
+      '#description' => t('Wrap the Slot declaration into cmd.push() to be handled asynchronously.'),
+      '#default_value' => !empty($values['async_rendering']),
     ];
     return $form;
   }
@@ -94,7 +100,7 @@ class LazyLoadAdSlotContextReaction extends context_reaction {
    * (#required in the form element will break module non related contexts.)
    */
   function options_form_submit($values) {
-    if (empty($values['values']['ad_placement']) && empty($values['values']['disable_init_load'])) {
+    if (empty($values['values']['ad_placement']) && empty($values['values']['disable_dom_rendering'])) {
       form_set_error('reactions[plugins][lazyadslot][values][ad_placement]', t('Please provide at least one selector.'));
     }
     return $values;

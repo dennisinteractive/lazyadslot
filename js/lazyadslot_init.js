@@ -11,7 +11,7 @@ Drupal.behaviors.lazyAdSlotLoad = {
       for (var key in Drupal.settings.lazyAdSlot.tags) {
         if (Drupal.settings.lazyAdSlot.tags.hasOwnProperty(key)) {
           var tag = Drupal.settings.lazyAdSlot.tags[key];
-          if (!tag.disable_init_load) {
+          if (!tag.disable_dom_rendering) {
             lazyLoadAdSlot.init(tag);
           }
         }
