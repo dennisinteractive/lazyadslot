@@ -4,10 +4,36 @@ var lazyLoadAdSlot = lazyLoadAdSlot || {};
 
   'use strict';
 
+  var windowHeight  = window.innerHeight;
+
+  function _throttle(fn, threshhold, scope) {
+    threshhold || (threshhold = 250);
+    var last,
+        deferTimer;
+    return function () {
+      var context = scope || this;
+
+      var now = +new Date,
+          args = arguments;
+      if (last && now < last + threshhold) {
+        // hold on to it
+        clearTimeout(deferTimer);
+        deferTimer = setTimeout(function () {
+          last = now;
+          fn.apply(context, args);
+        }, threshhold);
+      } else {
+        last = now;
+        fn.apply(context, args);
+      }
+    };
+  }
+
   var lazyLoadAd = {
 
     adSlot: {},
     adSlotCounter: {},
+    adSlotOffsets: [],
     top: 1,
     slotId: '',
     attr: {},
@@ -16,19 +42,9 @@ var lazyLoadAdSlot = lazyLoadAdSlot || {};
       var initialTop = parseInt(tag.top);
       return isNaN(initialTop) ? this.top : initialTop;
     },
-    appendBefore: function (el, html) {
-      $(html).insertBefore(el);
-    },
-    appendAfter: function (el, html) {
-      $(html).insertAfter(el);
-    },
-    pushAd: function (el, html) {
-      if (this.adSlot.attach_how === 'before') {
-        this.appendBefore(el, html);
-      }
-      else {
-        this.appendAfter(el, html);
-      }
+    pushAd: function ($el, html) {
+      var vector = (this.adSlot.attach_how === 'before') ? 'Before' : 'After';
+      $(html)['insert' + vector]($el);
     },
     /**
      * Increase the counter per specified slot.
@@ -62,61 +78,49 @@ var lazyLoadAdSlot = lazyLoadAdSlot || {};
       return this.attr;
     },
     detectSlot: function () {
-      var $window = $(window);
+      var windowTop = document.body.scrollTop || document.documentElement.scrollTop;
 
       for (var i = 0; i < this.adSlot.ad_placement.length; i++) {
-        var el = $(this.adSlot.ad_placement[i]),
-          onScrollEnabled = (this.adSlot.onscroll === 1);
-
-        // Check if the element exists.
-        if (!el.length) {
-          continue;
-        }
-
-        // Detect needed variable only when they are needed.
-        if (onScrollEnabled) {
-          var offset = el.offset(),
-            windowTop = $window.scrollTop(),
-            elTopOffset = offset.top,
-            windowHeight = $window.height(),
-          // Used for comparison on initial page load.
-            loadHeightInitial = windowTop + elTopOffset + el.height() - this.top,
-          // Used for comparison on page scroll.
-            loadHeightScroll = elTopOffset + el.height() - this.top;
-        }
-
-        // A unique key to prevent repeating action when multiple selectors are provided.
         var uniqueKey = this.adSlot.ad_tag + '_' + this.adSlot.ad_placement[i];
 
-        if (
-          (!onScrollEnabled && !this.adSlot.added[uniqueKey]) ||
-          (onScrollEnabled && (!this.adSlot.added[uniqueKey])
-            && ((windowHeight > loadHeightInitial) || (windowTop + windowHeight) >= loadHeightScroll)
-          )
-        ) {
+        var slotElement = this.adSlotOffsets[i];
 
-          // check if it works with this.
-          this.adSlot.added[uniqueKey] = true;
-
-          // Push the slot.
-          this.addSlot(el);
+        if (!this.adSlot.added[uniqueKey] && slotElement.$el) {
+          if (this.adSlot.onscroll === 1) {
+            var offset = (windowTop + windowHeight);
+            console.log(offset, slotElement.offset);
+            if (offset > slotElement.offset) {
+              console.log('fire ad');
+              this.adSlot.added[uniqueKey] = true;
+              this.addSlot(slotElement.$el);
+            }
+          }
         }
+      }
+    },
+    detectSlotOffset: function() {
+      for (var i = 0; i < this.adSlot.ad_placement.length; i++) {
+        var $el = $(this.adSlot.ad_placement[i]);
+        this.adSlotOffsets.push({
+          $el:    $el,
+          offset: parseInt($el.offset().top, 10) + $el.height() - this.top
+        });
       }
     },
     /**
      * Generate ne slot ID, and push the Ad into the page.
      */
-    addSlot: function (el) {
-      // Generate new slot definition/display with incremental id as unique.
-      var currentIDregex = new RegExp(this.adSlot.ad_tag, 'g'),
-        newID = this.adSlot.ad_tag + '_' + this.increaseSlotCounter(this.adSlot.ad_tag),
-        adSlotRendered = this.adSlot.renderedDfp.replace(currentIDregex, newID);
+    addSlot: function ($el) {
+      // Generate new slot definition/display with incremental id as unique.,
+      var currentIDregex  = new RegExp(this.adSlot.ad_tag, 'g'),
+        newID             = this.adSlot.ad_tag + '_' + this.increaseSlotCounter(this.adSlot.ad_tag),
+        adSlotRendered    = this.adSlot.renderedDfp.replace(currentIDregex, newID);
 
       // Wrap the rendered slot.
-      adSlotRendered = $('<div/>', this.getAttr(newID)).append(adSlotRendered);
+      adSlotRendered = '<div class="' + this.getAttr(newID).class + '">' + adSlotRendered + '</div>';
 
       // Append the Slot declaration/display.
-      this.pushAd(el, $(adSlotRendered));
+      this.pushAd($el, adSlotRendered);
 
       // Refresh the tag.
       googletag.pubads().refresh([googletag.slots[newID]]);
@@ -128,34 +132,29 @@ var lazyLoadAdSlot = lazyLoadAdSlot || {};
     // Append the Ad to the page.
     execute: function (tag, attr) {
 
-      // Initial setup.
-      var self = this;
-      this.top = this.getTop(tag);
-      tag.added = [];
+      tag.added   = [];
+
+      this.top    = this.getTop(tag);
       this.adSlot = tag;
+
       if (!$.isEmptyObject(attr)) {
         this.attr = attr;
       }
+      this.detectSlotOffset();
+      this.detectSlot();
 
-      // todo: implement debounce.
-      // see:
-      // - https://davidwalsh.name/javascript-debounce-function
-      // - http://underscorejs.org/docs/underscore.html#section-83
-      // Trigger needed action by onScroll request.
-      switch (tag.onscroll) {
-        case 1:
-          // Initial detection.
+      if (tag.onscroll === 1) {
+        window.addEventListener('scroll', _throttle(function() {
           this.detectSlot();
+        }.bind(this), 100));
 
-          // Act on the actual scroll.
-          $(window).on('scroll', function () {
-            self.detectSlot();
-          });
+        window.onresize = _throttle(function(event) {
+          windowHeight = window.innerHeight;
 
-          break;
-
-        default:
-          this.detectSlot();
+          // Reset adSlotOffsets as not to keep adding the same slots
+          this.adSlotOffsets = [];
+          this.detectSlotOffset();
+        }.bind(this), 100);
       }
     },
   };
