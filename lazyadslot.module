@@ -90,9 +90,16 @@ function lazyadslot_page_build() {
         $slotDeclaration = str_ireplace('googletag.pubads().disableInitialLoad();', '', $slotDeclaration);
       }
 
-      // Wrap the slot declaration to be handled asynchronously if is setup so.
-      if (!empty($values['async_rendering']) && strpos($slotDeclaration, 'googletag.cmd.push') === FALSE) {
-        $slotDeclaration = 'googletag.cmd.push(function() {' . PHP_EOL . $slotDeclaration . PHP_EOL . '});';
+      // Wrap the slot Declaration and Display
+      // to be handled asynchronously if is setup so.
+      if (!empty($values['async_rendering'])) {
+        if (strpos($slotDeclaration, 'googletag.cmd.push') === FALSE) {
+          $slotDeclaration = 'googletag.cmd.push(function() {' . PHP_EOL . $slotDeclaration . PHP_EOL . '});';
+        }
+
+        if (strpos($slotDisplay, 'googletag.cmd.push') === FALSE) {
+          $slotDisplay = preg_replace('/googletag\.display\(\".*\"\)\;$/m', 'googletag.cmd.push(function() {' . PHP_EOL . '$0' . PHP_EOL . '});', $slotDisplay);
+        }
       }
 
       // Arraying the selectors.

@@ -77,22 +77,21 @@ var lazyLoadAdSlot = lazyLoadAdSlot || {};
       }
       return this.attr;
     },
-    detectSlot: function () {
+    detectSlot: function (force) {
       var windowTop = document.body.scrollTop || document.documentElement.scrollTop;
 
-      for (var i = 0; i < this.adSlot.ad_placement.length; i++) {
+      for (var i = 0; i < this.adSlotOffsets.length; i++) {
         var uniqueKey = this.adSlot.ad_tag + '_' + this.adSlot.ad_placement[i];
-
         var slotElement = this.adSlotOffsets[i];
 
-        if (!this.adSlot.added[uniqueKey] && slotElement.$el) {
-          if (this.adSlot.onscroll === 1) {
+        if (!this.adSlot.added[uniqueKey] && slotElement && slotElement.$el) {
+          if (force === true || this.adSlot.onscroll === 1) {
             var offset = (windowTop + windowHeight);
-            console.log(offset, slotElement.offset);
-            if (offset > slotElement.offset) {
-              console.log('fire ad');
+            if (force === true || offset > slotElement.offset) {
               this.adSlot.added[uniqueKey] = true;
               this.addSlot(slotElement.$el);
+              // Reset offset.
+              this.adSlotOffsets[i] = null;
             }
           }
         }
@@ -117,7 +116,7 @@ var lazyLoadAdSlot = lazyLoadAdSlot || {};
         adSlotRendered    = this.adSlot.renderedDfp.replace(currentIDregex, newID);
 
       // Wrap the rendered slot.
-      adSlotRendered = '<div class="' + this.getAttr(newID).class + '">' + adSlotRendered + '</div>';
+      adSlotRendered = $('<div/>', this.getAttr(newID)).append(adSlotRendered);
 
       // Append the Slot declaration/display.
       this.pushAd($el, adSlotRendered);
@@ -126,7 +125,7 @@ var lazyLoadAdSlot = lazyLoadAdSlot || {};
       googletag.pubads().refresh([googletag.slots[newID]]);
 
       this.slotId = newID;
-      // Allways destroy generated attributes.
+      // Always destroy generated attributes.
       this.attr = {};
     },
     // Append the Ad to the page.
@@ -141,9 +140,11 @@ var lazyLoadAdSlot = lazyLoadAdSlot || {};
         this.attr = attr;
       }
       this.detectSlotOffset();
-      this.detectSlot();
 
       if (tag.onscroll === 1) {
+        // Initial page refresh.
+        this.detectSlot();
+
         window.addEventListener('scroll', _throttle(function() {
           this.detectSlot();
         }.bind(this), 100));
@@ -155,6 +156,9 @@ var lazyLoadAdSlot = lazyLoadAdSlot || {};
           this.adSlotOffsets = [];
           this.detectSlotOffset();
         }.bind(this), 100);
+      }
+      else {
+        this.detectSlot(true);
       }
     },
   };
@@ -168,20 +172,3 @@ var lazyLoadAdSlot = lazyLoadAdSlot || {};
   };
 
 })(jQuery);
-
-// Old definition
-//(function (root, factory) {
-//  // Browser globals.
-//  root.lazyLoadAdSlot = factory(root.jQuery);
-//}(this, function ($) {
-//
-//  'use strict';
-//
-//
-//  // Starting point.
-//  return function (AdSlotTag) {
-//    !!(window.googletag && AdSlotTag &&
-//    $(AdSlotTag.ad_placement).length &&
-//    lazyLoadAdSlot.execute(AdSlotTag));
-//  };
-//}
