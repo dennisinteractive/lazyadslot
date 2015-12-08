@@ -4,17 +4,18 @@ var lazyLoadAdSlot = lazyLoadAdSlot || {};
 
   'use strict';
 
-  var windowHeight  = window.innerHeight;
+  var windowHeight = window.innerHeight;
+  var initialized = false;
 
   function _throttle(fn, threshhold, scope) {
     threshhold || (threshhold = 250);
     var last,
-        deferTimer;
+      deferTimer;
     return function () {
       var context = scope || this;
 
       var now = +new Date,
-          args = arguments;
+        args = arguments;
       if (last && now < last + threshhold) {
         // hold on to it
         clearTimeout(deferTimer);
@@ -33,7 +34,7 @@ var lazyLoadAdSlot = lazyLoadAdSlot || {};
 
     adSlot: {},
     adSlotCounter: {},
-    adSlotOffsets: [],
+    adSlotsStore: [],
     top: 1,
     slotId: '',
     attr: {},
@@ -47,11 +48,7 @@ var lazyLoadAdSlot = lazyLoadAdSlot || {};
       $(html)['insert' + vector]($el);
     },
     /**
-     * Increase the counter per specified slot.
-     *
-     * @param slotName
-     * @returns Int
-     *   Counter value.
+     * Increase the counter per specified slot name.
      */
     increaseSlotCounter: function (slotName) {
       if (isNaN(this.adSlotCounter[slotName])) {
@@ -78,42 +75,64 @@ var lazyLoadAdSlot = lazyLoadAdSlot || {};
       return this.attr;
     },
     detectSlot: function (force) {
+      var uniqueKey, offset, slotElement;
       var windowTop = document.body.scrollTop || document.documentElement.scrollTop;
 
-      for (var i = 0; i < this.adSlotOffsets.length; i++) {
-        var uniqueKey = this.adSlot.ad_tag + '_' + this.adSlot.ad_placement[i];
-        var slotElement = this.adSlotOffsets[i];
+      for (var i = 0; i < this.adSlotsStore.length; i++) {
+        var ad = this.adSlotsStore[i].tag,
+          adPlacement = this.adSlotsStore[i].$el.selector;
 
-        if (!this.adSlot.added[uniqueKey] && slotElement && slotElement.$el) {
-          if (force === true || this.adSlot.onscroll === 1) {
-            var offset = (windowTop + windowHeight);
+        uniqueKey = ad.ad_tag + '_' + adPlacement;
+        slotElement = this.adSlotsStore[i];
+
+        if (!this.added[uniqueKey] && slotElement && slotElement.$el) {
+          if (force === true || ad.onscroll === 1) {
+            offset = (windowTop + windowHeight);
             if (force === true || offset > slotElement.offset) {
-              this.adSlot.added[uniqueKey] = true;
-              this.addSlot(slotElement.$el);
-              // Reset offset.
-              this.adSlotOffsets[i] = null;
+              this.added[uniqueKey] = true;
+              this.addSlot(ad, slotElement.$el);
             }
           }
         }
       }
     },
-    detectSlotOffset: function() {
-      for (var i = 0; i < this.adSlot.ad_placement.length; i++) {
-        var $el = $(this.adSlot.ad_placement[i]);
-        this.adSlotOffsets.push({
-          $el:    $el,
-          offset: parseInt($el.offset().top, 10) + $el.height() - this.top
+    isSlotStored: function (selector) {
+      var added = false;
+      if (this.adSlotsStore.length > 0) {
+        $.each(this.adSlotsStore, function (index, value) {
+          if (value.$el.selector === selector) {
+            added = true;
+          }
         });
+      }
+      return added;
+    },
+    addSlotToStore: function () {
+      for (var slotKey = 0; slotKey < this.adSlot.length; slotKey++) {
+        var ad = this.adSlot[slotKey];
+        for (var i = 0; i < ad.ad_placement.length; i++) {
+          var selector = ad.ad_placement[i];
+          if (selector && selector.length > 0) {
+            var $el = $(selector);
+            if ($el.length === 1 && !this.isSlotStored($el.selector)) {
+              this.adSlotsStore.push({
+                $el: $el,
+                offset: parseInt($el.offset().top, 10) + $el.height() - this.top,
+                tag: ad,
+              });
+            }
+          }
+        }
       }
     },
     /**
-     * Generate ne slot ID, and push the Ad into the page.
+     * Generate new slot ID, and push the Ad into the page.
      */
-    addSlot: function ($el) {
-      // Generate new slot definition/display with incremental id as unique.,
-      var currentIDregex  = new RegExp(this.adSlot.ad_tag, 'g'),
-        newID             = this.adSlot.ad_tag + '_' + this.increaseSlotCounter(this.adSlot.ad_tag),
-        adSlotRendered    = this.adSlot.renderedDfp.replace(currentIDregex, newID);
+    addSlot: function (adSlot, $el) {
+      // Generate new slot definition/display with incremental id as unique.
+      var currentIDregex = new RegExp(adSlot.ad_tag, 'g'),
+        newID = adSlot.ad_tag + '_' + this.increaseSlotCounter(adSlot.ad_tag),
+        adSlotRendered = adSlot.renderedDfp.replace(currentIDregex, newID);
 
       // Wrap the rendered slot.
       adSlotRendered = $('<div/>', this.getAttr(newID)).append(adSlotRendered);
@@ -128,45 +147,45 @@ var lazyLoadAdSlot = lazyLoadAdSlot || {};
       // Always destroy generated attributes.
       this.attr = {};
     },
-    // Append the Ad to the page.
-    execute: function (tag, attr) {
+    createTag: function (tag, attr) {
 
-      tag.added   = [];
-
-      this.top    = this.getTop(tag);
-      this.adSlot = tag;
+      this.top = this.getTop(tag);
+      this.adSlot.push(tag);
 
       if (!$.isEmptyObject(attr)) {
         this.attr = attr;
       }
-      this.detectSlotOffset();
 
-      if (tag.onscroll === 1) {
-        // Initial page refresh.
+      // Instantly Ad load.
+      this.addSlotToStore();
+      this.detectSlot(true);
+
+      return this;
+    },
+    // Append the Ad to the page.
+    execute: function () {
+      this.added = {};
+      this.adSlot = [];
+
+      window.addEventListener('scroll', _throttle(function () {
         this.detectSlot();
+      }.bind(this), 100));
 
-        window.addEventListener('scroll', _throttle(function() {
-          this.detectSlot();
-        }.bind(this), 100));
-
-        window.onresize = _throttle(function(event) {
-          windowHeight = window.innerHeight;
-
-          // Reset adSlotOffsets as not to keep adding the same slots
-          this.adSlotOffsets = [];
-          this.detectSlotOffset();
-        }.bind(this), 100);
-      }
-      else {
-        this.detectSlot(true);
-      }
+      window.onresize = _throttle(function (event) {
+        windowHeight = window.innerHeight;
+        // Reset adSlotsStore as not to keep adding the same slots
+        this.addSlotToStore();
+      }.bind(this), 100);
     },
   };
 
   // Initialization function.
-  lazyLoadAdSlot.init = function (AdSlotTag, attr) {
-    if (!!(window.googletag && AdSlotTag && $(AdSlotTag.ad_placement).length)) {
-      lazyLoadAd.execute(AdSlotTag, attr);
+  lazyLoadAdSlot.init = function () {
+    if (window.googletag) {
+      lazyLoadAd.execute();
+      if (initialized === false) {
+        initialized = true;
+      }
       return lazyLoadAd;
     }
   };

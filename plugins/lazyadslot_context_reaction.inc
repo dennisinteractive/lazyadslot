@@ -63,7 +63,7 @@ class LazyLoadAdSlotContextReaction extends context_reaction {
     ];
     $form['values']['ad_placement'] = [
       '#title' => t('Ad Placement'),
-      '#description' => t('Enter the CSS selector where you wish to ad unit to render. In case you want to use :nth-child type of selector, please use instead the :nth-of-type selector to achieve expected result.'),
+      '#description' => t('Enter the CSS selector where you wish to ad unit to render. <br/>In case you want to use :nth-child type of selector, please use instead the :nth-of-type selector to achieve expected result.<br/> Only selector which has one element match are supported.'),
       '#type' => 'textarea',
       '#default_value' => isset($values['ad_placement']) ? $values['ad_placement'] : '',
     ];
