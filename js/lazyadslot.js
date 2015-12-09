@@ -158,7 +158,9 @@ var lazyLoadAdSlot = lazyLoadAdSlot || {};
 
       // Instantly Ad load.
       this.addSlotToStore();
-      this.detectSlot(true);
+      // If it's not setup to load on scroll,
+      // force it though conditions in order to be added instantly.
+      this.detectSlot(!tag.onscroll);
 
       return this;
     },
@@ -181,13 +183,11 @@ var lazyLoadAdSlot = lazyLoadAdSlot || {};
 
   // Initialization function.
   lazyLoadAdSlot.init = function () {
-    if (window.googletag) {
+    if (initialized === false) {
       lazyLoadAd.execute();
-      if (initialized === false) {
-        initialized = true;
-      }
-      return lazyLoadAd;
+      initialized = true;
     }
+    return lazyLoadAd;
   };
 
 })(jQuery);

@@ -45,6 +45,13 @@ class LazyLoadAdSlotContextReaction extends context_reaction {
       '#options' => $options,
       '#default_value' => isset($values['ad_tag']) ? $values['ad_tag'] : [],
     ];
+    $form['values']['identifier'] = [
+      '#type' => 'textfield',
+      '#size' => 20,
+      '#title' => t('Identifier(Optional)'),
+      '#description' => t('An arbitrary identifier in order to recognize the set of configurations when a bespoke implementation is needed.'),
+      '#default_value' => isset($values['identifier']) ? $values['identifier'] : '',
+    ];
     $form['values']['onscroll'] = [
       '#type' => 'checkbox',
       '#title' => t('Add on OnScroll'),
