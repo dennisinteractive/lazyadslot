@@ -1,179 +1,193 @@
-(function (root, factory) {
-  // Browser globals.
-  root.lazyLoadAdSlot = factory(root.jQuery);
-}(this, function ($) {
+var lazyLoadAdSlot = lazyLoadAdSlot || {};
+
+(function ($) {
+
   'use strict';
-  var lazyLoadAdSlot = {
+
+  var windowHeight = window.innerHeight;
+  var initialized = false;
+
+  function _throttle(fn, threshhold, scope) {
+    threshhold || (threshhold = 250);
+    var last,
+      deferTimer;
+    return function () {
+      var context = scope || this;
+
+      var now = +new Date,
+        args = arguments;
+      if (last && now < last + threshhold) {
+        // hold on to it
+        clearTimeout(deferTimer);
+        deferTimer = setTimeout(function () {
+          last = now;
+          fn.apply(context, args);
+        }, threshhold);
+      } else {
+        last = now;
+        fn.apply(context, args);
+      }
+    };
+  }
+
+  var lazyLoadAd = {
 
     adSlot: {},
+    adSlotCounter: {},
+    adSlotsStore: [],
     top: 1,
+    slotId: '',
+    attr: {},
 
-    setTag: function (tag) {
-      this.adSlot = tag;
-    },
-    getTag: function () {
-      return this.adSlot;
-    },
     getTop: function (tag) {
       var initialTop = parseInt(tag.top);
       return isNaN(initialTop) ? this.top : initialTop;
     },
-    /**
-     * We need at least one selector, so check for it.
-     * @returns {string}
-     */
-    checkMethod: function () {
-      var selectorQTY = this.adSlot.ad_placement.length;
-
-      if (selectorQTY === 0) {
-        throw new Error('You need to provide at least on selector.');
-      }
-
-      return selectorQTY > 1 ? 'multiple' : 'single';
+    pushAd: function ($el, html) {
+      var vector = (this.adSlot.attach_how === 'before') ? 'Before' : 'After';
+      $(html)['insert' + vector]($el);
     },
     /**
-     * Get the method.
-     * @returns {string|thrown error}
+     * Increase the counter per specified slot name.
      */
-    getMethod: function () {
-      // Validate it first.
-      try {
-        return this.checkMethod();
+    increaseSlotCounter: function (slotName) {
+      if (isNaN(this.adSlotCounter[slotName])) {
+        this.adSlotCounter[slotName] = 0;
       }
-      catch (err) {
-        console.debug(err);
+      else {
+        this.adSlotCounter[slotName]++;
+      }
+      return this.adSlotCounter[slotName];
+    },
+    /**
+     * Add default attributes and merge with passed ones.
+     */
+    getAttr: function (newId) {
+      var defaultClasses = 'lazyadslot lazyadslot-' + newId;
+
+      // Add default classes.
+      if (this.attr.class) {
+        this.attr.class = this.attr.class + ' ' + defaultClasses;
+      }
+      else {
+        this.attr.class = defaultClasses;
+      }
+      return this.attr;
+    },
+    detectSlot: function (force) {
+      var uniqueKey, offset, slotElement;
+      var windowTop = document.body.scrollTop || document.documentElement.scrollTop;
+
+      for (var i = 0; i < this.adSlotsStore.length; i++) {
+        var ad = this.adSlotsStore[i].tag,
+          adPlacement = this.adSlotsStore[i].$el.selector;
+
+        uniqueKey = ad.ad_tag + '_' + adPlacement;
+        slotElement = this.adSlotsStore[i];
+
+        if (!this.added[uniqueKey] && slotElement && slotElement.$el) {
+          if (force === true || ad.onscroll === 1) {
+            offset = (windowTop + windowHeight);
+            if (force === true || offset > slotElement.offset) {
+              this.added[uniqueKey] = true;
+              this.addSlot(ad, slotElement.$el);
+            }
+          }
+        }
       }
     },
-    // todo: Implement(not tested).
-    appendBefore: function (el, html) {
-      $(html).insertBefore(el);
+    isSlotStored: function (selector) {
+      var added = false;
+      if (this.adSlotsStore.length > 0) {
+        $.each(this.adSlotsStore, function (index, value) {
+          if (value.$el.selector === selector) {
+            added = true;
+          }
+        });
+      }
+      return added;
     },
-    appendAfter: function (el, html) {
-      $(html).insertAfter(el);
-    },
-    detectSlot: function () {
-      var $window = $(window);
-      var tag = this.getTag(),
-        method = this.getMethod();
-
-      for (var i = 0; i < tag.ad_placement.length; i++) {
-        // Get the tag one more time
-        // as we check if the add was added for specific selector.
-        var tag = this.getTag(),
-          el = $(tag.ad_placement[i]),
-          onScrollEnabled = (tag.onscroll === 1);
-
-        // Check if the element exists.
-        if (!el.length) {
-          continue;
-        }
-
-        // Detect needed variable only when they are needed.
-        if (onScrollEnabled) {
-          var offset = el.offset(),
-            windowTop = $window.scrollTop(),
-            elTopOffset = offset.top,
-            windowHeight = $window.height(),
-          // Used for comparison on initial page load.
-            loadHeightInitial = windowTop + elTopOffset + el.height() - this.top,
-          // Used for comparison on page scroll.
-            loadHeightScroll = elTopOffset + el.height() - this.top;
-        }
-
-        if (
-          (!onScrollEnabled && !tag.added['selector_' + i]) ||
-          (onScrollEnabled && !tag.added['selector_' + i]
-            && ((windowHeight > loadHeightInitial) || (windowTop + windowHeight) >= loadHeightScroll)
-          )
-        ) {
-          tag.added['selector_' + i] = true;
-          this.setTag(tag);
-
-          // Add the slot.
-          if (method === 'single') {
-            this.addSlotSingle(tag, i, el);
+    addSlotToStore: function () {
+      for (var slotKey = 0; slotKey < this.adSlot.length; slotKey++) {
+        var ad = this.adSlot[slotKey];
+        for (var i = 0; i < ad.ad_placement.length; i++) {
+          var selector = ad.ad_placement[i];
+          if (selector && selector.length > 0) {
+            var $el = $(selector);
+            if ($el.length === 1 && !this.isSlotStored($el.selector)) {
+              this.adSlotsStore.push({
+                $el: $el,
+                offset: parseInt($el.offset().top, 10) + $el.height() - this.top,
+                tag: ad,
+              });
+            }
           }
-          else if (method === 'multiple') {
-            this.addSlotMultiple(tag, i, el);
-          }
-          else {
-            console.debug('No known implementation method detected.');
-          }
-
         }
       }
     },
     /**
-     * Identical as this.addSlotMultiple.
-     * Keep it separate for now.
+     * Generate new slot ID, and push the Ad into the page.
      */
-    addSlotSingle: function (tag, delta, el) {
+    addSlot: function (adSlot, $el) {
       // Generate new slot definition/display with incremental id as unique.
-      var currentIDregex = new RegExp(tag.ad_tag, 'g'),
-        newID = tag.ad_tag + '_' + delta,
-        adSlotDisplay = tag.renderedDfp.replace(currentIDregex, newID);
+      var currentIDregex = new RegExp(adSlot.ad_tag, 'g'),
+        newID = adSlot.ad_tag + '_' + this.increaseSlotCounter(adSlot.ad_tag),
+        adSlotRendered = adSlot.renderedDfp.replace(currentIDregex, newID);
 
-      // Generate new slot display with incremental id as unique.
-      var adSlotDefinition = tag.slotDefinition.replace(currentIDregex, newID);
+      // Wrap the rendered slot.
+      adSlotRendered = $('<div/>', this.getAttr(newID)).append(adSlotRendered);
 
-      // Append the Slot definition/display.
-      this.appendAfter(el, $(adSlotDisplay).prepend('<script>' + adSlotDefinition + '</script>'));
+      // Append the Slot declaration/display.
+      this.pushAd($el, adSlotRendered);
 
       // Refresh the tag.
       googletag.pubads().refresh([googletag.slots[newID]]);
+
+      this.slotId = newID;
+      // Always destroy generated attributes.
+      this.attr = {};
     },
-    /**
-     * Identical as this.addSlotSingle.
-     * Keep it as it is for now.
-     */
-    addSlotMultiple: function (tag, delta, el) {
-      // Generate new slot definition/display with incremental id as unique.
-      var currentIDregex = new RegExp(tag.ad_tag, 'g'),
-        newID = tag.ad_tag + '_' + delta,
-        adSlotDisplay = tag.renderedDfp.replace(currentIDregex, newID);
+    createTag: function (tag, attr) {
 
-      // Generate new slot display with incremental id as unique.
-      var adSlotDefinition = tag.slotDefinition.replace(currentIDregex, newID);
+      this.top = this.getTop(tag);
+      this.adSlot.push(tag);
 
-      // Append the Slot definition/display.
-      this.appendAfter(el, $(adSlotDisplay).prepend('<script>' + adSlotDefinition + '</script>'));
+      if (!$.isEmptyObject(attr)) {
+        this.attr = attr;
+      }
 
-      // Refresh the tag.
-      googletag.pubads().refresh([googletag.slots[newID]]);
+      // Instantly Ad load.
+      this.addSlotToStore();
+      // If it's not setup to load on scroll,
+      // force it though conditions in order to be added instantly.
+      this.detectSlot(!tag.onscroll);
+
+      return this;
     },
     // Append the Ad to the page.
-    execute: function (tag) {
-      // Indicator to load the Ad only once.
-      var self = this;
+    execute: function () {
+      this.added = {};
+      this.adSlot = [];
 
-      tag.added = [];
-      this.setTag(tag);
-      this.top = this.getTop(tag);
+      window.addEventListener('scroll', _throttle(function () {
+        this.detectSlot();
+      }.bind(this), 100));
 
-      // Trigger needed action by onScroll request.
-      switch (tag.onscroll) {
-        case 1:
-          // Initial detection.
-          this.detectSlot();
-
-          // Act on the actual scroll.
-          $(window).on('scroll', function () {
-            self.detectSlot();
-          });
-
-          break;
-
-        default:
-          this.detectSlot();
-      }
+      window.onresize = _throttle(function (event) {
+        windowHeight = window.innerHeight;
+        // Reset adSlotsStore as not to keep adding the same slots
+        this.addSlotToStore();
+      }.bind(this), 100);
     },
   };
 
-  // Starting point.
-  return function (AdSlotTag) {
-    return !!(window.googletag && AdSlotTag &&
-    $(AdSlotTag.ad_placement).length &&
-    lazyLoadAdSlot.execute(AdSlotTag));
+  // Initialization function.
+  lazyLoadAdSlot.init = function () {
+    if (initialized === false) {
+      lazyLoadAd.execute();
+      initialized = true;
+    }
+    return lazyLoadAd;
   };
 
-}));
+})(jQuery);
