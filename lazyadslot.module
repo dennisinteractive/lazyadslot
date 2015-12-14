@@ -74,7 +74,7 @@ function lazyadslot_page_build() {
       $slotDisplay = render($dfp_tag);
 
       // Store the slot to be removed later in hook_js_alter().
-      _lazyadslot_slot_to_remove($ad_tag);
+      _lazyadslot_slots_to_remove($ad_tag);
 
       // Get the slot declaration.
       $slotDeclaration = _lazyload_get_slot_declaration($ad_tag);
@@ -162,12 +162,12 @@ function _lazyadslot_add_js($tags) {
  *   The machine name of the slot.
  * @return string $machinename
  */
-function _lazyadslot_slot_to_remove($ad_tag = NULL) {
-  $machinename = &drupal_static(__FUNCTION__, FALSE);
+function _lazyadslot_slots_to_remove($ad_tag = NULL) {
+  $machinenames = &drupal_static(__FUNCTION__, array());
   if (!empty($ad_tag)) {
-    $machinename = $ad_tag;
+    $machinenames[] = $ad_tag;
   }
-  return $machinename;
+  return $machinenames;
 }
 
 /**
@@ -176,13 +176,17 @@ function _lazyadslot_slot_to_remove($ad_tag = NULL) {
  * Remove unneeded declared DFP slot.
  */
 function lazyadslot_js_alter(&$javascript) {
-  $ad_tag = _lazyadslot_slot_to_remove();
+  // Return if there are no ad tags to remove.
+  if (!$ad_tags = _lazyadslot_slots_to_remove()) {
+    return;
+  }
   // Iterate of all javascript items to get dfp slots.
   foreach ($javascript as $key => $value) {
     if (isset($value['data']) && !is_array($value['data']) && strstr($value['data'], 'googletag')) {
-      if (preg_match('/' . 'googletag\.slots\[\"' . $ad_tag . '\"\]\s*=\s*googletag\.define[^\(]*?Slot\(' . '/', $value['data'])) {
-        unset($javascript[$key]);
-        return;
+      foreach ($ad_tags as $ad_tag) {
+        if (preg_match('/' . 'googletag\.slots\[\"' . $ad_tag . '\"\]\s*=\s*googletag\.define[^\(]*?Slot\(' . '/', $value['data'])) {
+          unset($javascript[$key]);
+        }
       }
     }
   }
