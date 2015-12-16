@@ -141,7 +141,9 @@ var lazyLoadAdSlot = lazyLoadAdSlot || {};
       this.pushAd($el, adSlotRendered);
 
       // Refresh the tag.
-      googletag.pubads().refresh([googletag.slots[newID]]);
+      if (parseInt(adSlot.refreshOnLoad)) {
+        googletag.pubads().refresh([googletag.slots[newID]]);
+      }
 
       this.slotId = newID;
       // Always destroy generated attributes.
