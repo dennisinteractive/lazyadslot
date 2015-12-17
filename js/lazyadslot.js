@@ -168,18 +168,19 @@ var lazyLoadAdSlot = lazyLoadAdSlot || {};
     },
     // Append the Ad to the page.
     execute: function () {
+      var self = this;
       this.added = {};
       this.adSlot = [];
 
       window.addEventListener('scroll', _throttle(function () {
-        this.detectSlot();
-      }.bind(this), 100));
+        self.detectSlot();
+      }, 100));
 
       window.onresize = _throttle(function (event) {
         windowHeight = window.innerHeight;
         // Reset adSlotsStore as not to keep adding the same slots
-        this.addSlotToStore();
-      }.bind(this), 100);
+        self.addSlotToStore();
+      }, 100);
     },
   };
 
