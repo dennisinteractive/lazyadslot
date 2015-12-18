@@ -168,6 +168,20 @@ function _lazyadslot_slots_to_remove($ad_tag = NULL) {
 }
 
 /**
+ * Registry of slots to keep.
+ *
+ * @param null $ad_tag
+ * @return array
+ */
+function _lazyadslot_slots_to_keep($ad_tag = NULL) {
+  $machinenames = &drupal_static(__FUNCTION__, array());
+  if (!empty($ad_tag)) {
+    $machinenames[] = $ad_tag;
+  }
+  return $machinenames;
+}
+
+/**
  * Implements hook_js_alter().
  *
  * Remove unneeded declared DFP slot.
@@ -177,6 +191,10 @@ function lazyadslot_js_alter(&$javascript) {
   if (!$ad_tags = _lazyadslot_slots_to_remove()) {
     return;
   }
+
+  // Keep slots that are used by blocks.
+  $ad_tags = array_diff($ad_tags, _lazyadslot_slots_to_keep());
+
   // Iterate of all javascript items to get dfp slots.
   foreach ($javascript as $key => $value) {
     if (isset($value['data']) && !is_array($value['data']) && strstr($value['data'], 'googletag')) {
@@ -198,5 +216,16 @@ function lazyadslot_module_implements_alter(&$implementations, $hook) {
     $module = ['lazyadslot' => $implementations['lazyadslot']];
     unset($implementations['lazyadslot']);
     $implementations = $implementations + $module;
+  }
+}
+
+/**
+ * Implements hook_preprocess_block().
+ *
+ * Keep registry of slots to keep on page.
+ */
+function lazyadslot_preprocess_block(&$variables) {
+  if (isset($variables['elements']['dfp_wrapper']['tag']['#tag']->machinename)) {
+    _lazyadslot_slots_to_keep($variables['elements']['dfp_wrapper']['tag']['#tag']->machinename);
   }
 }
