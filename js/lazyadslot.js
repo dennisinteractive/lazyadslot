@@ -1,3 +1,7 @@
+/**
+ * @file
+ * Add the Ad Slots in a lazy load manner.
+ */
 var lazyLoadAdSlot = lazyLoadAdSlot || {};
 
 (function ($) {
@@ -17,13 +21,14 @@ var lazyLoadAdSlot = lazyLoadAdSlot || {};
       var now = +new Date,
         args = arguments;
       if (last && now < last + threshold) {
-        // hold on to it
+        // Hold on to it.
         clearTimeout(deferTimer);
         deferTimer = setTimeout(function () {
           last = now;
           fn.apply(context, args);
         }, threshold);
-      } else {
+      }
+      else {
         last = now;
         fn.apply(context, args);
       }
@@ -178,7 +183,7 @@ var lazyLoadAdSlot = lazyLoadAdSlot || {};
 
       window.onresize = _throttle(function (event) {
         windowHeight = window.innerHeight;
-        // Reset adSlotsStore as not to keep adding the same slots
+        // Reset adSlotsStore as not to keep adding the same slots.
         self.addSlotToStore();
       }, 100);
     },
