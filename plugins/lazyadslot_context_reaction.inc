@@ -6,9 +6,9 @@
  */
 
 /**
- * Class LazyLoadAdSlotContextReaction
+ * Class LazyAdSlotContextReaction
  */
-class LazyLoadAdSlotContextReaction extends context_reaction {
+class LazyAdSlotContextReaction extends context_reaction {
   public $lazyadslot_tags = [];
 
   // Form options.

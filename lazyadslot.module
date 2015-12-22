@@ -26,7 +26,7 @@ function lazyadslot_context_plugins() {
     'handler' => [
       'path' => drupal_get_path('module', 'lazyadslot') . '/plugins',
       'file' => 'lazyadslot_context_reaction.inc',
-      'class' => 'LazyLoadAdSlotContextReaction',
+      'class' => 'LazyAdSlotContextReaction',
       'parent' => 'context_condition',
     ],
   ];
