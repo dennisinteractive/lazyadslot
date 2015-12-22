@@ -7,8 +7,8 @@ var lazyLoadAdSlot = lazyLoadAdSlot || {};
   var windowHeight = window.innerHeight;
   var initialized = false;
 
-  function _throttle(fn, threshhold, scope) {
-    threshhold || (threshhold = 250);
+  function _throttle(fn, threshold, scope) {
+    threshold || (threshold = 250);
     var last,
       deferTimer;
     return function () {
@@ -16,13 +16,13 @@ var lazyLoadAdSlot = lazyLoadAdSlot || {};
 
       var now = +new Date,
         args = arguments;
-      if (last && now < last + threshhold) {
+      if (last && now < last + threshold) {
         // hold on to it
         clearTimeout(deferTimer);
         deferTimer = setTimeout(function () {
           last = now;
           fn.apply(context, args);
-        }, threshhold);
+        }, threshold);
       } else {
         last = now;
         fn.apply(context, args);
