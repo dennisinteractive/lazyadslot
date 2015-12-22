@@ -71,28 +71,28 @@ function lazyadslot_page_build() {
       $tags[$key] = $values;
 
       // Get the slot Display.
-      $slotDisplay = render($dfp_tag);
+      $slot_display = render($dfp_tag);
 
       // Store the slot to be removed later in hook_js_alter().
       _lazyadslot_slots_to_remove($ad_tag);
 
       // Get the slot declaration.
-      $slotDeclaration = _lazyload_get_slot_declaration($ad_tag);
+      $slot_declaration = _lazyload_get_slot_declaration($ad_tag);
 
       // The Ad can't be created if the declaration is not detected.
-      if (empty($slotDeclaration)) {
+      if (empty($slot_declaration)) {
         continue;
       }
 
       // Wrap the slot Declaration and Display
       // to be handled asynchronously if is setup so.
       if (!empty($values['async_rendering'])) {
-        if (strpos($slotDeclaration, 'googletag.cmd.push') === FALSE) {
-          $slotDeclaration = 'googletag.cmd.push(function() {' . PHP_EOL . $slotDeclaration . PHP_EOL . '});';
+        if (strpos($slot_declaration, 'googletag.cmd.push') === FALSE) {
+          $slot_declaration = 'googletag.cmd.push(function() {' . PHP_EOL . $slot_declaration . PHP_EOL . '});';
         }
 
-        if (strpos($slotDisplay, 'googletag.cmd.push') === FALSE) {
-          $slotDisplay = preg_replace('/googletag\.display\(\".*\"\)\;$/m', 'googletag.cmd.push(function() {' . PHP_EOL . '$0' . PHP_EOL . '});', $slotDisplay);
+        if (strpos($slot_display, 'googletag.cmd.push') === FALSE) {
+          $slot_display = preg_replace('/googletag\.display\(\".*\"\)\;$/m', 'googletag.cmd.push(function() {' . PHP_EOL . '$0' . PHP_EOL . '});', $slot_display);
         }
       }
 
@@ -100,7 +100,7 @@ function lazyadslot_page_build() {
       $tags[$key]['ad_placement'] = explode(PHP_EOL, $values['ad_placement']);
 
       // All Ad needed markup.
-      $tags[$key]['renderedDfp'] = '<script>' . PHP_EOL . $slotDeclaration . PHP_EOL . '</script>' . PHP_EOL . $slotDisplay;
+      $tags[$key]['renderedDfp'] = '<script>' . PHP_EOL . $slot_declaration . PHP_EOL . '</script>' . PHP_EOL . $slot_display;
 
       // Refresh on load.
       $tags[$key]['refreshOnLoad'] = variable_get('dfp_disable_init_load', 0);
@@ -118,9 +118,10 @@ function lazyadslot_page_build() {
  * Helper to retrieve added js for given ad_tag slot.
  *
  * @param string $ad_tag
- *   DFP slot machinename
+ *   DFP slot machinename.
+ *
  * @return string
- *   JavaScript code
+ *   JavaScript code.
  */
 function _lazyload_get_slot_declaration($ad_tag) {
   foreach (drupal_add_js() as $key => $value) {
@@ -153,10 +154,12 @@ function _lazyadslot_add_js($tags) {
 }
 
 /**
- * Helper to statically store the slot in order to be removed in hook_js_alter().
+ * Helper to statically store the slot
+ * in order to be removed in hook_js_alter().
  *
  * @param string $ad_tag
  *   The machine name of the slot.
+ *
  * @return string $machinename
  */
 function _lazyadslot_slots_to_remove($ad_tag = NULL) {
@@ -171,6 +174,8 @@ function _lazyadslot_slots_to_remove($ad_tag = NULL) {
  * Registry of slots to keep.
  *
  * @param null $ad_tag
+ *   The ad tag.
+ *
  * @return array
  */
 function _lazyadslot_slots_to_keep($ad_tag = NULL) {
