@@ -81,7 +81,7 @@ class LazyAdSlotContextReaction extends context_reaction {
       '#options' => [
         'after' => 'After',
         'before' => 'Before',
-        'insert' => 'Insert',
+        'inside' => 'Insert',
         'replace' => 'Replace',
       ],
       '#default_value' => isset($values['attach_how']) ? $values['attach_how'] : [],
