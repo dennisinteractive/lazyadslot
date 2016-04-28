@@ -49,8 +49,20 @@ var lazyLoadAdSlot = lazyLoadAdSlot || {};
       return isNaN(initialTop) ? this.top : initialTop;
     },
     pushAd: function ($el, html) {
-      var vector = (this.adSlot.attach_how === 'before') ? 'Before' : 'After';
-      $(html)['insert' + vector]($el);
+      switch(this.adSlot.attach_how){
+        case 'before':
+          $(html).insertBefore($el);
+          break;
+        case 'after':
+          $(html).insertAfter($el);
+          break;
+        case 'replace':
+          $(html).replaceWith($el);
+          break;
+        case 'inside':
+          $(html).appendTo($el);
+          break;
+      }
     },
     /**
      * Increase the counter per specified slot name.
