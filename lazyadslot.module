@@ -41,7 +41,6 @@ function lazyadslot_context_plugins() {
  * All the visibility rules should be controlled by the context.
  */
 function lazyadslot_page_build() {
-
   $tags = [];
 
   // Execute lazyadslot plugin.
@@ -49,11 +48,14 @@ function lazyadslot_page_build() {
     $plugin->execute();
 
     foreach ($plugin->lazyadslot_tags as $key => $values) {
+      // dpm($key);
+      // dpm($value);
 
       $ad_tag = $values['ad_tag'];
-
+// dpm($ad_tag,'$ad_tag');
       // Load the DFP tag.
       $tag = dfp_tag_load($ad_tag);
+// dpm($tag,'s$tag');
 
       // Check for existence.
       if (empty($tag)) {
@@ -69,7 +71,7 @@ function lazyadslot_page_build() {
       // Process the tag.
       $dfp_tag = dfp_tag($ad_tag);
       $tags[$key] = $values;
-
+// dpm($tags,'$tags');
       // Get the slot Display.
       $slot_display = render($dfp_tag);
 
@@ -109,7 +111,15 @@ function lazyadslot_page_build() {
     // Allow modules to alter the final tags.
     drupal_alter('lazyadslot_tags', $tags);
 
+
+    // Load all the available tags on a site. 
+    // $tags = dfp_tag_load_all();
+
+    // $lazy_tags = lazyadslot_get_tags();
+    // dpm($lazy_tags,'lazyadslot_get_tags');
     // Add the javascript.
+    // _lazyadslot_add_js($tags);
+ 
     _lazyadslot_add_js($tags);
   }
 }
@@ -142,11 +152,11 @@ function _lazyadslot_add_js($tags) {
 
   // Add collected JS configuration.
   if (!empty($tags)) {
-    drupal_add_js([
-      'lazyAdSlot' => [
-        'tags' => $tags,
-      ],
-    ], 'setting');
+
+    // drupal_add_js(['lazyAdSlot' => ['tags' => $tags,],], 'setting');
+    drupal_add_js(array('lazyAdSlot' => array('tags' => $tags)), 'setting');
+
+
 
     // The usage.
     drupal_add_js(drupal_get_path('module', 'lazyadslot') . '/js/lazyadslot_init.js');
@@ -234,3 +244,45 @@ function lazyadslot_preprocess_block(&$variables) {
     _lazyadslot_slots_to_keep($variables['elements']['dfp_wrapper']['tag']['#tag']->machinename);
   }
 }
+
+// function lazyadslot_get_tags(){
+//     $contexts = context_active_contexts();
+//     // dpm($contexts);
+//     $lazyadslots = array();
+//     // Load lazyslot contexts from variable.
+
+//      $lazy_contexts = variable_get('lazyadslot_contexts');
+//     foreach($contexts as $context){
+
+
+
+//       if(in_array($context->name,array_values($lazy_contexts)) !== false){
+// // dpm('yeah-> '.$context->name);
+
+// // dpm($context->reactions);
+//           $reactions = $context->reactions['lazyadslot']['values'];
+//           $ad_tag = $context->reactions['lazyadslot']['values']['ad_tag'];
+//             $lazyadslots[$ad_tag] = $context->reactions['lazyadslot']['values'];
+          
+//           /*
+//           ad_tag (String, 14 characters ) content_bottom
+//           identifier (String, 0 characters )
+//           onscroll (Integer) 1
+//           top (String, 2 characters ) 50
+//           ad_placement (String, 11 characters ) #file-68997
+//           attach_how (String, 6 characters ) before
+//           disable_dom_rendering (Integer) 0
+//           async_rendering (Integer) 0
+//           */
+//       }
+//     }
+//   return($lazyadslots);
+// }
+
+
+// function lazyadslot_set_var(){
+//   $data = array('test_lazy_inline','lazyadload_node');
+//   variable_set('lazyadslot_contexts', $data);
+// }
+
+

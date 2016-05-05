@@ -19,4 +19,4 @@ Drupal.behaviors.lazyAdSlotLoad = {
       }
     }
   }
-};
+}
