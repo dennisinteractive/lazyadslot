@@ -141,7 +141,7 @@ var lazyLoadAdSlot = lazyLoadAdSlot || {};
           slotElement = this.adSlotsStore[i];
           // Invidivual offset per slot, even if slot repeated.
           //offset formula: parseInt($el.offset().top, 10) + $el.height() - this.top,
-          individualOffset = parseInt(this.adSlotsStore[i].$el.eq(j).offset().top, 10) + this.adSlotsStore[i].$el.eq(j).height() - this.top;
+          var individualOffset = parseInt(this.adSlotsStore[i].$el.eq(j).offset().top, 10) + this.adSlotsStore[i].$el.eq(j).height() - this.top;
           // slotElement[$ej,tag];
           if (!this.added[uniqueKey] && slotElement && slotElement.$el) {
             if (force === true || ad.onscroll === 1) {
