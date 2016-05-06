@@ -48,13 +48,10 @@ var lazyLoadAdSlot = lazyLoadAdSlot || {};
       var initialTop = parseInt(tag.top);
       return isNaN(initialTop) ? this.top : initialTop;
     },
-    pushAd: function ($el, html) {
-//    console.info('this.adSlot.attach_how  '+this.adSlot.attach_how);
-
-//        console.info(Object(this.adSlot["0"]));
+    pushAd: function ($el, html,adSlot) {
 
 
-      switch(this.adSlot["0"].attach_how){
+      switch(adSlot.attach_how){
         case 'before':
           $(html).insertBefore($el);
           break;
@@ -74,13 +71,10 @@ var lazyLoadAdSlot = lazyLoadAdSlot || {};
      */
     increaseSlotCounter: function (slotName) {
 
-//console.info('slotName: ' + slotName);
 
-console.info('ad_placement: ' + this.adSlot["0"].ad_placement);
         var adPlacement = this.adSlot["0"].ad_placement;
 
         var placementTimes = $(adPlacement).length;
-        console.info('ad_placement times: ' + placementTimes);
 
 
         if (isNaN(this.adSlotCounter[slotName])) {
@@ -89,7 +83,6 @@ console.info('ad_placement: ' + this.adSlot["0"].ad_placement);
       else {
         this.adSlotCounter[slotName]++;
       }
-        console.info('this.adSlotCounter: ' + JSON.stringify(this.adSlotCounter));
 
         return this.adSlotCounter[slotName];
     },
@@ -116,36 +109,48 @@ console.info('ad_placement: ' + this.adSlot["0"].ad_placement);
 
       // For each of the tags that are set as lazyloading.
       for (var i = 0; i < this.adSlotsStore.length; i++) {
-        var ad = this.adSlotsStore[i].tag,
-           adPlacement = this.adSlotsStore[i].$el.selector;
 
-//          console.info('this.adSlotsStore[i].tag: ' + Object(ad));
+        //
+        var ad = this.adSlotsStore[i].tag;
 
-          var times = $(adPlacement).length;
+        var ad_slot_name = ad.ad_tag;
+        var adPlacement = this.adSlotsStore[i].$el.eq(0).selector;
+//        adPlacement = this.adSlotsStore[i].$el.selector;
 
+          // times that an ad has placeholders.
+          var times = this.adSlotsStore[i].$el.length;
 //          uniqueKey = ad.ad_tag + '_' + i;
+
+
           // For each of the times that a placeholder of a lazy ad appears on the page.
-          for (var j = 0; j < $(adPlacement).length; j++) {
-//console.info('j: '+j);
+          for (var j = 0; j < times ; j++) {
               uniqueKey = ad.ad_tag + '_' + j;
-//        console.info('uniqueKey j '+uniqueKey);
 //        slotElement = this.adSlotsStore[j];
 
 
               slotElement = this.adSlotsStore[i];
+//              var elementOffset = ad.$el.eq(j).offset();
+
+              var individualOffset = this.adSlotsStore[i].$el.eq(j).offset();
+
+              //offset: parseInt($el.offset().top, 10) + $el.height() - this.top,
+              individualOffset = parseInt(this.adSlotsStore[i].$el.eq(j).offset().top,10) + this.adSlotsStore[i].$el.eq(j).height() - this.top;
 
 
-//console.info('slotElement $el' +Object.keys(this.adSlotsStore[i].$el));
-//console.info('slotElement $el --- ' +Object(this.adSlotsStore[i].$el['0']));
 
-//console.info('slotElement tag' +Object.keys(this.adSlotsStore[i].tag));
-
-
+                // slotElement [$ej,tag];
               if (!this.added[uniqueKey] && slotElement && slotElement.$el) {
                   if (force === true || ad.onscroll === 1) {
+
                       offset = (windowTop + windowHeight);
-                      if (force === true || offset > slotElement.offset) {
+
+//                      if (force === true || offset > this.adSlotsStore[i].$el.eq(j).offset().top) {
+                      if (force === true || offset > individualOffset) {
+//                      if (force === true || offset > slotElement.offset) {
+                          console.info('FIRE! uniqueKey: '+uniqueKey);
+
                           this.added[uniqueKey] = true;
+console.info('ad',ad);
                           this.addSlot(ad, slotElement.$el[j]);
                       }
                   }
@@ -154,9 +159,10 @@ console.info('ad_placement: ' + this.adSlot["0"].ad_placement);
           } // end for j
       } // end for j
     },
+
+    // todo modify this to accept repetitions.
     isSlotStored: function (selector) {
       var added = false;
-
       if (this.adSlotsStore.length > 0) {
         $.each(this.adSlotsStore, function (index, value) {
           if (value.$el.selector === selector) {
@@ -179,22 +185,28 @@ console.info('ad_placement: ' + this.adSlot["0"].ad_placement);
 
         for (var i = 0; i < ad.ad_placement.length; i++) {
           var selector = ad.ad_placement[i];
+
           // If selector not empty.
           if (selector && selector.length > 0) {
 
-console.info('selector: '+selector.length);
             var $el = $(selector);
-              console.info('selector length: '+$el.length);
 
-// todo fix this
-            if (/*$el.length === 1 &&*/ !this.isSlotStored($el.selector)) {
+
+              if (/*$el.length === 1 &&*/ !this.isSlotStored($el.selector)) {
+              for(var j=0;j<$el.length;j++){
+                  var $el_j = $el.eq(j);
+
+
+              }
               this.adSlotsStore.push({
                 // This now needs to consider that might be more than 1.
                 $el: $el,
-                offset: parseInt($el.offset().top, 10) + $el.height() - this.top,
+                // how is this offset work
+//                offset: parseInt($el.offset().top, 10) + $el.height() - this.top,
                 tag: ad,
               });
-            }
+              }
+
           }
         }
       }
@@ -206,19 +218,16 @@ console.info('selector: '+selector.length);
 
       // Generate new slot definition/display with incremental id as unique.
       var currentIDregex = new RegExp(adSlot.ad_tag, 'g');
-//      var  adSlot.ad_tag
+      //  var  adSlot.ad_tag
       var  newID = adSlot.ad_tag + '_' + this.increaseSlotCounter(adSlot.ad_tag);
       var  adSlotRendered = adSlot.renderedDfp.replace(currentIDregex, newID);
-
-        console.info('newID: '+newID);
-        console.info('adSlotRendered: '+adSlotRendered);
 
 
         // Wrap the rendered slot.
       adSlotRendered = $('<div/>', this.getAttr(newID)).append(adSlotRendered);
 
       // Append the Slot declaration/display.
-      this.pushAd($el, adSlotRendered);
+      this.pushAd($el, adSlotRendered,adSlot);
 
       // Refresh the tag.
       if (parseInt(adSlot.refreshOnLoad)) {
