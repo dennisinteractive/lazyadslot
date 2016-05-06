@@ -4,7 +4,7 @@
  */
 (function() {
 
-  Drupal.wysiwyg.plugins.lazyadslotWysiwyg = {
+  Drupal.wysiwyg.plugins.lazyadslot = {
 
     /**
      * Execute the button.

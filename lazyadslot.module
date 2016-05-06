@@ -107,7 +107,6 @@ function lazyadslot_page_build() {
     drupal_alter('lazyadslot_tags', $tags);
 
     // Add the javascript.
-
     _lazyadslot_add_js($tags);
   }
 }
@@ -143,8 +142,6 @@ function _lazyadslot_add_js($tags) {
 
     // drupal_add_js(['lazyAdSlot' => ['tags' => $tags,],], 'setting');
     drupal_add_js(array('lazyAdSlot' => array('tags' => $tags)), 'setting');
-
-
 
     // The usage.
     drupal_add_js(drupal_get_path('module', 'lazyadslot') . '/js/lazyadslot_init.js');

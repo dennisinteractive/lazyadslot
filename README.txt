@@ -22,7 +22,7 @@ DFP TAG             -- Allows you to choose which DFP tag to use for this
                        bundle of configurations
 IDENTIFIER          -- Allows you to specify a string in order to recognize
                        the bundle when using in a custom implementation
-ADD ON SCROLL     -- Whether to add the Ad on page instantly(on page load)
+ADD ON SCROLL       -- Whether to add the Ad on page instantly(on page load)
                        or on scroll;
 Top pixels 	        -- How many pixels before arriving into the viewable Ad
                        should request be fired;

@@ -130,5 +130,4 @@ class LazyAdSlotContextReaction extends context_reaction {
       }
     }
   }
-
 }

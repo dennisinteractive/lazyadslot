@@ -1,12 +1,11 @@
 <?php
 /**
  * @file
- * dennis_dfp_inline_wysiwyg.module
+ * lazyadslot_wysiwyg.module
  *
  * Contains WYSIWYG features to insert ad slots inline into articles.
  */
 
-define("LAZYADSLOT_WYSIWYG_PLACEHOLDER", '<div class="inline-body-placeholder"></div>');
 
 /**
  * Implements hook_wysiwyg_include_directory().
