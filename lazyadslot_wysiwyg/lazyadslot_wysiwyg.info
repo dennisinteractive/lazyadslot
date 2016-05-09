@@ -1,5 +1,0 @@
-name = LazyAdSlot Inline WYSIWYG
-description = WYSIWYG support for inline ads
-core = 7.x
-
-dependencies[] = lazyadslot
