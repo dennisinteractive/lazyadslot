@@ -195,6 +195,7 @@ function lazyadslot_js_alter(&$javascript) {
   // Keep slots that are used by blocks.
   $ad_tags = array_diff($ad_tags, _lazyadslot_slots_to_keep());
 
+
   // Iterate of all javascript items to get dfp slots.
   foreach ($javascript as $key => $value) {
     if (isset($value['data']) && !is_array($value['data']) && strstr($value['data'], 'googletag')) {

@@ -67,6 +67,7 @@ var lazyLoadAdSlot = lazyLoadAdSlot || {};
      * @param adSlot
      */
     pushAd: function ($el, html, adSlot) {
+
       switch (adSlot.attach_how) {
         case 'before':
           $(html).insertBefore($el);
@@ -74,9 +75,9 @@ var lazyLoadAdSlot = lazyLoadAdSlot || {};
         case 'after':
           $(html).insertAfter($el);
           break;
-        case 'replace':
-          $(html).replaceWith($el);
-          break;
+         case 'replace':
+           $($el).replaceWith(html);
+           break;
         case 'inside':
           $(html).appendTo($el);
           break;
@@ -132,7 +133,6 @@ var lazyLoadAdSlot = lazyLoadAdSlot || {};
         var ad = this.adSlotsStore[i].tag;
         var ad_slot_name = ad.ad_tag;
         var adPlacement = this.adSlotsStore[i].$el.eq(0).selector;
-
         // times that an ad has placeholders.
         var placeholderTimes = this.adSlotsStore[i].$el.length;
         // For each of the times that a placeholder of a lazy ad appears on the page.
@@ -147,18 +147,40 @@ var lazyLoadAdSlot = lazyLoadAdSlot || {};
             if (force === true || ad.onscroll === 1) {
               offset = (windowTop + windowHeight);
               if (force === true || offset > individualOffset) {
-//                console.info('FIRE! uniqueKey: ' + uniqueKey);
                 this.added[uniqueKey] = true;
-//                console.info('ad', ad);
                 this.addSlot(ad, slotElement.$el[j]);
               }
             }
           }
 
         } // end for j
-      } // end for j
+      } // end for i
     },
-
+    /**
+     * Increases the key/value pair for position dinamically for multiple body ads.
+     *
+     * @param newAttr
+     * @param adSlotRendered
+     * @returns {adSlotRendered}
+     */
+    replaceDFPInfo: function(newAttr,adSlotRendered) {
+      // Grab lazyadslot adslot name and slotnumber
+      var matchAd =  newAttr.class.match(/(lazyadslot lazyadslot-)(\w*)(_)([0-9]+)/m);
+      // Grab slot number (when multiple ads it adds _0,_1,_2 at the end of an ad class).
+      var adSlotNumber = matchAd[4];
+      // Grab targeting from the rendered adslot.
+      var renderedDfp = adSlotRendered.match(/(\.setTargeting\(\"position\"\, \")([0-9]*)/);
+      // Grab position key/value pair from the rendered adslot.
+      var positionString = renderedDfp[1];
+      // We grab the position defined as a start point for the incrementing.
+      var firstPos = renderedDfp[2];
+      // Adslot number added to position to increment it.
+      var finalPos = parseInt(adSlotNumber)+parseInt(firstPos);
+      // we replace with the new position values.
+      var adSlotRendered = adSlotRendered.replace(positionString+firstPos,positionString+finalPos);
+      // we return the updated/incremented rendered adslot.
+      return adSlotRendered;
+    },
     /**
      *
      * @param selector
@@ -206,11 +228,18 @@ var lazyLoadAdSlot = lazyLoadAdSlot || {};
       // Generate new slot definition/display with incremental id as unique.
       var currentIDregex = new RegExp(adSlot.ad_tag, 'g');
       //  var  adSlot.ad_tag
-      var newID = adSlot.ad_tag + '_' + this.increaseSlotCounter(adSlot.ad_tag);
-      var adSlotRendered = adSlot.renderedDfp.replace(currentIDregex, newID);
 
+      // modify positioins
+      var newID = adSlot.ad_tag + '_' + this.increaseSlotCounter(adSlot.ad_tag);
+
+      var adSlotRendered = adSlot.renderedDfp.replace(currentIDregex, newID);
       // Wrap the rendered slot.
-      adSlotRendered = $('<div/>', this.getAttr(newID)).append(adSlotRendered);
+      var newAttr = this.getAttr(newID);
+      // Replace (increase) ad position information dinamically.
+      var updatedSlot = this.replaceDFPInfo(newAttr,adSlotRendered);
+
+      adSlotRendered = $('<div/>', newAttr).append(updatedSlot);
+
       // Append the Slot declaration/display.
       this.pushAd($el, adSlotRendered, adSlot);
       // Refresh the tag.
