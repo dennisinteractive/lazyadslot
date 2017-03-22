@@ -10,6 +10,7 @@ var lazyLoadAdSlot = lazyLoadAdSlot || {};
 
   var windowHeight = window.innerHeight;
   var initialized = false;
+  var lazyslotready = new Event('lazyadslot:slotready', {bubbles:true});
 
   /**
    *
@@ -242,6 +243,10 @@ var lazyLoadAdSlot = lazyLoadAdSlot || {};
 
       // Append the Slot declaration/display.
       this.pushAd($el, adSlotRendered, adSlot);
+
+      // Trigger an event to say the slot is added to the page
+      adSlotRendered[0].dispatchEvent(lazyslotready);
+
       // Refresh the tag.
       if (parseInt(adSlot.refreshOnLoad)) {
         googletag.pubads().refresh([googletag.slots[newID]]);
