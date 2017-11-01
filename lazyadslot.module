@@ -134,6 +134,10 @@ function _lazyload_get_slot_declaration($ad_tag) {
  * Helper to add the javascript code for Taboola DFP Native.
  */
 function _lazyadslot_add_js($tags) {
+  if (path_is_admin(current_path())) {
+    return;
+  }
+
   // Always load the library.
   drupal_add_js(drupal_get_path('module', 'lazyadslot') . '/js/lazyadslot.js');
 
@@ -187,6 +191,10 @@ function _lazyadslot_slots_to_keep($ad_tag = NULL) {
  * Remove unneeded declared DFP slot.
  */
 function lazyadslot_js_alter(&$javascript) {
+  if (path_is_admin(current_path())) {
+    return;
+  }
+
   // Return if there are no ad tags to remove.
   if (!$ad_tags = _lazyadslot_slots_to_remove()) {
     return;
