@@ -138,6 +138,9 @@ var lazyLoadAdSlot = lazyLoadAdSlot || {};
         var placeholderTimes = this.adSlotsStore[i].$el.length;
         // For each of the times that a placeholder of a lazy ad appears on the page.
         for (var j = 0; j < placeholderTimes; j++) {
+          if(ad.lazload_limit !== 'undefined' && j >= ad.lazload_limit) {
+            break;
+          }
           uniqueKey = ad.ad_tag + '_' + j;
           slotElement = this.adSlotsStore[i];
           // Invidivual offset per slot, even if slot repeated.

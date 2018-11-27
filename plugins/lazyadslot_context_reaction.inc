@@ -98,6 +98,13 @@ class LazyAdSlotContextReaction extends context_reaction {
       '#description' => t('Wrap the Slot declaration into cmd.push() to be handled asynchronously.'),
       '#default_value' => !empty($values['async_rendering']),
     ];
+    $form['values']['lazload_limit'] = [
+      '#type' => 'textfield',
+      '#size' => 2,
+      '#title' => t('Lazyload slot limit'),
+      '#description' => t('Limit number of lazyloaded ad slots'),
+      '#default_value' => $values['lazload_limit'],
+    ];
     return $form;
   }
 
