@@ -125,7 +125,7 @@ var lazyLoadAdSlot = lazyLoadAdSlot || {};
      *
      * @param force
      */
-    detectSlot: function (force) {
+    detectSlot: function (force, ad_tag) {
       var uniqueKey, offset, slotElement;
       var windowTop = document.body.scrollTop || document.documentElement.scrollTop;
       // For each of the tags that are set as lazyloading.
@@ -142,12 +142,13 @@ var lazyLoadAdSlot = lazyLoadAdSlot || {};
           slotElement = this.adSlotsStore[i];
           // Invidivual offset per slot, even if slot repeated.
           //offset formula: parseInt($el.offset().top, 10) + $el.height() - this.top,
-          var individualOffset = parseInt(this.adSlotsStore[i].$el.eq(j).offset().top, 10) + this.adSlotsStore[i].$el.eq(j).height() - this.top;
+          var individualOffset = parseInt(this.adSlotsStore[i].$el.eq(j).offset().top, 10)
+            + this.adSlotsStore[i].$el.eq(j).height() - this.top;
           // slotElement[$ej,tag];
           if (!this.added[uniqueKey] && slotElement && slotElement.$el) {
             if (force === true || ad.onscroll === 1) {
               offset = (windowTop + windowHeight);
-              if (force === true || offset > individualOffset) {
+              if ((force === true &&  ad_tag === ad.ad_tag) || offset > individualOffset) {
                 this.added[uniqueKey] = true;
                 this.addSlot(ad, slotElement.$el[j]);
               }
@@ -271,7 +272,7 @@ var lazyLoadAdSlot = lazyLoadAdSlot || {};
       this.addSlotToStore();
       // If it's not setup to load on scroll,
       // force it though conditions in order to be added instantly.
-      this.detectSlot(!tag.onscroll);
+      this.detectSlot(!tag.onscroll, tag.ad_tag);
       return this;
     },
     /**
