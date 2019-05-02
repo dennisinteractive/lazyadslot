@@ -54,8 +54,8 @@ class LazyAdSlotContextReaction extends context_reaction {
     ];
     $form['values']['onscroll'] = [
       '#type' => 'checkbox',
-      '#title' => t('Add on OnScroll'),
-      '#description' => t('Load the Ads onScroll or instantly.'),
+      '#title' => t('Add on scroll'),
+      '#description' => t('Load the Ads on scroll or instantly.'),
       '#default_value' => !empty($values['onscroll']),
     ];
     $form['values']['top'] = [
@@ -77,11 +77,11 @@ class LazyAdSlotContextReaction extends context_reaction {
     $form['values']['attach_how'] = [
       '#type' => 'select',
       '#title' => t('Attach how'),
-      '#description' => t('Should the Ad be attached before or after specified selector?<br/>Not Recommended to be used in combination with OnScroll option(high calculation is not implemented).'),
+      '#description' => t('Should the Ad be attached before or after specified selector?<br/>Not Recommended to be used in combination with on scroll option (high calculation is not implemented).'),
       '#options' => [
         'after' => 'After',
         'before' => 'Before',
-        'inside' => 'Insert',
+        'inside' => 'Inside',
         'replace' => 'Replace',
       ],
       '#default_value' => isset($values['attach_how']) ? $values['attach_how'] : [],
@@ -97,6 +97,13 @@ class LazyAdSlotContextReaction extends context_reaction {
       '#title' => t('Async rendering'),
       '#description' => t('Wrap the Slot declaration into cmd.push() to be handled asynchronously.'),
       '#default_value' => !empty($values['async_rendering']),
+    ];
+    $form['values']['lazload_limit'] = [
+      '#type' => 'textfield',
+      '#size' => 2,
+      '#title' => t('Lazyload slot limit'),
+      '#description' => t('Limit number of lazyloaded ad slots'),
+      '#default_value' => $values['lazload_limit'],
     ];
     return $form;
   }
@@ -130,5 +137,4 @@ class LazyAdSlotContextReaction extends context_reaction {
       }
     }
   }
-
 }

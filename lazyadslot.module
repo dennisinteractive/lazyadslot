@@ -41,7 +41,6 @@ function lazyadslot_context_plugins() {
  * All the visibility rules should be controlled by the context.
  */
 function lazyadslot_page_build() {
-
   $tags = [];
 
   // Execute lazyadslot plugin.
@@ -51,7 +50,6 @@ function lazyadslot_page_build() {
     foreach ($plugin->lazyadslot_tags as $key => $values) {
 
       $ad_tag = $values['ad_tag'];
-
       // Load the DFP tag.
       $tag = dfp_tag_load($ad_tag);
 
@@ -69,7 +67,6 @@ function lazyadslot_page_build() {
       // Process the tag.
       $dfp_tag = dfp_tag($ad_tag);
       $tags[$key] = $values;
-
       // Get the slot Display.
       $slot_display = render($dfp_tag);
 
@@ -137,16 +134,18 @@ function _lazyload_get_slot_declaration($ad_tag) {
  * Helper to add the javascript code for Taboola DFP Native.
  */
 function _lazyadslot_add_js($tags) {
+  if (path_is_admin(current_path())) {
+    return;
+  }
+
   // Always load the library.
   drupal_add_js(drupal_get_path('module', 'lazyadslot') . '/js/lazyadslot.js');
 
   // Add collected JS configuration.
   if (!empty($tags)) {
-    drupal_add_js([
-      'lazyAdSlot' => [
-        'tags' => $tags,
-      ],
-    ], 'setting');
+
+    // drupal_add_js(['lazyAdSlot' => ['tags' => $tags,],], 'setting');
+    drupal_add_js(array('lazyAdSlot' => array('tags' => $tags)), 'setting');
 
     // The usage.
     drupal_add_js(drupal_get_path('module', 'lazyadslot') . '/js/lazyadslot_init.js');
@@ -192,6 +191,10 @@ function _lazyadslot_slots_to_keep($ad_tag = NULL) {
  * Remove unneeded declared DFP slot.
  */
 function lazyadslot_js_alter(&$javascript) {
+  if (path_is_admin(current_path())) {
+    return;
+  }
+
   // Return if there are no ad tags to remove.
   if (!$ad_tags = _lazyadslot_slots_to_remove()) {
     return;
@@ -199,6 +202,7 @@ function lazyadslot_js_alter(&$javascript) {
 
   // Keep slots that are used by blocks.
   $ad_tags = array_diff($ad_tags, _lazyadslot_slots_to_keep());
+
 
   // Iterate of all javascript items to get dfp slots.
   foreach ($javascript as $key => $value) {
